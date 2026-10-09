@@ -1,0 +1,21 @@
+[remap]
+
+importer="wav"
+type="AudioStreamSample"
+path="res://.import/drowned_heartbeat.wav-469b4fdff27c9ccaafd731495c50d72f.sample"
+
+[deps]
+
+source_file="res://assets/audio/drowned_heartbeat.wav"
+dest_files=[ "res://.import/drowned_heartbeat.wav-469b4fdff27c9ccaafd731495c50d72f.sample" ]
+
+[params]
+
+force/8_bit=false
+force/mono=false
+force/max_rate=false
+force/max_rate_hz=44100
+edit/trim=false
+edit/normalize=false
+edit/loop=false
+compress/mode=0

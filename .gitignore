@@ -1,0 +1,7 @@
+.import/
+.godot/
+.export/
+export.cfg
+export_presets.cfg
+*.translation
+.DS_Store
