@@ -1,7 +1,7 @@
-extends Spatial
+extends Node3D
 
 # THE HUM: Archive of the Drowned
-# Procedural, self-contained first-person horror prototype for the Godot 3.x API.
+# Procedural first-person horror vertical slice for Godot 4.7.2.
 
 const HALL_LENGTH = 76.0
 const MAX_ECHOES = 3
@@ -57,8 +57,9 @@ func _ready():
 	_build_enemy()
 	_build_pickups()
 	_build_hud()
+	_setup_audio()
 	_set_message("THE ARCHIVE IS LISTENING. Move quietly.", 5.0)
-	Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _setup_audio():
 	ambient_player = AudioStreamPlayer.new()
@@ -81,10 +82,11 @@ func _setup_environment():
 	var env = Environment.new()
 	env.background_mode = Environment.BG_COLOR
 	env.background_color = Color(0.008, 0.014, 0.021)
-	env.ambient_light_color = Color(0.19, 0.25, 0.29)
-	env.ambient_light_energy = 0.16
+	env.ambient_light_source = Environment.AMBIENT_SOURCE_COLOR
+	env.ambient_light_color = Color(0.30, 0.39, 0.42)
+	env.ambient_light_energy = 0.95
 	env.fog_enabled = true
-	env.fog_color = Color(0.027, 0.055, 0.065)
+	env.fog_light_color = Color(0.027, 0.055, 0.065)
 	env.fog_depth_begin = 8.0
 	env.fog_depth_end = 52.0
 	env.fog_depth_curve = 1.65
@@ -96,9 +98,9 @@ func _setup_environment():
 	world.environment = env
 	add_child(world)
 
-	var moon = DirectionalLight.new()
+	var moon = DirectionalLight3D.new()
 	moon.light_color = Color(0.32, 0.48, 0.55)
-	moon.light_energy = 0.24
+	moon.light_energy = 0.55
 	moon.rotation_degrees = Vector3(-48, -23, 0)
 	moon.shadow_enabled = true
 	add_child(moon)
@@ -156,7 +158,7 @@ func _build_world():
 		_box(self, "Bay bench", Vector3(center_x - side * 0.55, 0.68, bz + 1.8), Vector3(1.0, 0.26, 2.1), steel, false)
 		_box(self, "Bay cabinet", Vector3(center_x, 1.2, bz - 1.5), Vector3(0.75, 2.0, 0.66), wall_mat, true)
 		_box(self, "Bay light", Vector3(center_x, 4.16, bz), Vector3(0.26, 0.08, 1.65), trim, false)
-		var bay_light = _omni(Vector3(center_x, 3.82, bz), Color(0.2, 0.73, 0.72), 0.42, 6.5, true)
+		var bay_light = _omni(Vector3(center_x, 3.82, bz), Color(0.2, 0.73, 0.72), 2.0, 7.5, true)
 		flicker_lights.append([bay_light, 0.42, float(i) * 1.2 + 1.0])
 
 	# Overhead lamps alternate cold white and drowned amber; their irregular flicker is intentional.
@@ -164,7 +166,7 @@ func _build_world():
 		var zlamp = 8.0 - float(i) * 7.6
 		var amber = i % 3 == 2
 		var hue = Color(0.92, 0.47, 0.21) if amber else Color(0.44, 0.69, 0.74)
-		var energy = 0.62 if amber else 0.82
+		var energy = 3.2 if amber else 4.2
 		_box(self, "Lamp diffuser", Vector3(0, 4.99, zlamp), Vector3(0.54, 0.045, 2.1), _emissive(hue, 0.8), false)
 		var lamp = _omni(Vector3(0, 4.68, zlamp), hue, energy, 9.0, true)
 		flicker_lights.append([lamp, energy, float(i) * 0.73])
@@ -194,8 +196,8 @@ func _build_world():
 	_omni(Vector3(0, 3.8, -60.2), Color(0.72, 0.12, 0.075), 0.65, 7.0, false)
 
 func _build_station(pos, index):
-	var station = Spatial.new()
-	station.translation = pos
+	var station = Node3D.new()
+	station.position = pos
 	add_child(station)
 	var base_mat = _mat(Color(0.12, 0.18, 0.19), 0.76, 0.34)
 	var glow_mat = _emissive(Color(0.24, 0.9, 0.81), 1.1)
@@ -206,43 +208,43 @@ func _build_station(pos, index):
 	return {"node": station, "light": light, "index": index}
 
 func _build_player():
-	player = KinematicBody.new()
-	player.name = "Listener"
-	player.translation = Vector3(0, 0.92, 10.0)
+	player = CharacterBody3D.new()
+	player.name = "Player"
+	player.position = Vector3(0, 0.92, 10.0)
 	add_child(player)
-	var shape = CapsuleShape.new()
+	var shape = CapsuleShape3D.new()
 	shape.radius = 0.34
 	shape.height = 1.82
-	var collider = CollisionShape.new()
+	var collider = CollisionShape3D.new()
 	collider.shape = shape
 	player.add_child(collider)
-	camera = Camera.new()
+	camera = Camera3D.new()
 	camera.current = true
-	camera.translation = Vector3(0, 1.55, 0)
+	camera.position = Vector3(0, 1.55, 0)
 	camera.fov = 78.0
 	player.add_child(camera)
-	flashlight = SpotLight.new()
+	flashlight = SpotLight3D.new()
 	flashlight.light_color = Color(0.79, 0.91, 0.92)
-	flashlight.light_energy = 2.25
+	flashlight.light_energy = 6.0
 	flashlight.spot_range = 19.0
 	flashlight.spot_angle = 38.0
 	flashlight.spot_angle_attenuation = 1.2
 	flashlight.shadow_enabled = true
-	flashlight.translation = Vector3(0.12, -0.12, -0.08)
+	flashlight.position = Vector3(0.12, -0.12, -0.08)
 	flashlight.visible = false
 	camera.add_child(flashlight)
 
 func _build_enemy():
-	enemy = Spatial.new()
+	enemy = Node3D.new()
 	enemy.name = "The Drowned Listener"
-	enemy.translation = Vector3(0.0, 0.0, -53.0)
+	enemy.position = Vector3(0.0, 0.0, -53.0)
 	add_child(enemy)
 	var hide = _mat(Color(0.009, 0.015, 0.018), 0.02, 0.97)
 	var edge = _mat(Color(0.065, 0.095, 0.094), 0.1, 0.8)
 	var core_mat = _emissive(Color(0.46, 0.035, 0.023), 0.0)
 	enemy_core = _part(enemy, CapsuleMesh.new(), Vector3(0, 1.5, 0), hide)
 	enemy_core.mesh.radius = 0.39
-	enemy_core.mesh.mid_height = 1.35
+	enemy_core.mesh.height = 1.35
 	var chest = _part(enemy, SphereMesh.new(), Vector3(0, 2.08, 0), hide)
 	chest.scale = Vector3(0.64, 0.89, 0.38)
 	var head = _part(enemy, SphereMesh.new(), Vector3(0, 2.91, -0.07), edge)
@@ -254,11 +256,11 @@ func _build_enemy():
 	shoulder_r.scale = Vector3(0.34, 0.24, 0.33)
 	var arm_l = _part(enemy, CapsuleMesh.new(), Vector3(-0.69, 1.48, -0.02), edge)
 	arm_l.mesh.radius = 0.12
-	arm_l.mesh.mid_height = 0.95
+	arm_l.mesh.height = 0.95
 	arm_l.rotation.z = -0.13
 	var arm_r = _part(enemy, CapsuleMesh.new(), Vector3(0.69, 1.48, -0.02), edge)
 	arm_r.mesh.radius = 0.12
-	arm_r.mesh.mid_height = 0.95
+	arm_r.mesh.height = 0.95
 	arm_r.rotation.z = 0.13
 	var hand_l = _part(enemy, SphereMesh.new(), Vector3(-0.77, 0.88, -0.12), hide)
 	hand_l.scale = Vector3(0.18, 0.31, 0.14)
@@ -271,10 +273,10 @@ func _build_enemy():
 		eye_nodes.append(eye)
 	var leg_l = _part(enemy, CapsuleMesh.new(), Vector3(-0.22, 0.57, 0.03), hide)
 	leg_l.mesh.radius = 0.15
-	leg_l.mesh.mid_height = 0.8
+	leg_l.mesh.height = 0.8
 	var leg_r = _part(enemy, CapsuleMesh.new(), Vector3(0.22, 0.57, 0.03), hide)
 	leg_r.mesh.radius = 0.15
-	leg_r.mesh.mid_height = 0.8
+	leg_r.mesh.height = 0.8
 	enemy.set_meta("arms", [arm_l, arm_r])
 	enemy.set_meta("legs", [leg_l, leg_r])
 	enemy.set_meta("head", head)
@@ -287,9 +289,9 @@ func _build_pickups():
 	var positions = [Vector3(-2.75, 1.18, -7.0), Vector3(2.75, 1.18, -23.0), Vector3(-2.75, 1.18, -39.0)]
 	var tints = [Color(0.44, 0.91, 0.87), Color(0.93, 0.54, 0.28), Color(0.56, 0.68, 0.99)]
 	for i in range(positions.size()):
-		var shard = Spatial.new()
+		var shard = Node3D.new()
 		shard.name = "Memory shard %d" % (i + 1)
-		shard.translation = positions[i]
+		shard.position = positions[i]
 		shard.visible = false
 		add_child(shard)
 		var shardmat = _emissive(tints[i], 0.95)
@@ -297,7 +299,7 @@ func _build_pickups():
 		crystal.scale = Vector3(0.17, 0.27, 0.17)
 		crystal.rotation_degrees = Vector3(20, 0, 35)
 		var ring = _part(shard, _ring_mesh(0.28, 0.31), Vector3.ZERO, _emissive(tints[i], 0.5))
-		var light = OmniLight.new()
+		var light = OmniLight3D.new()
 		light.light_color = tints[i]
 		light.light_energy = 0.0
 		light.omni_range = 4.0
@@ -342,7 +344,7 @@ void fragment() {
 	ui_message = _label(layer, "", Vector2(300, 390), Vector2(1000, 50), 22, Color(0.81, 0.94, 0.88), true)
 	ui_message.visible = false
 	var title = _label(layer, "THE HUM  /  ARCHIVE OF THE DROWNED", Vector2(32, 19), Vector2(720, 26), 15, Color(0.58, 0.72, 0.72), false)
-	title.add_color_override("font_color", Color(0.56, 0.71, 0.69, 0.68))
+	title.add_theme_color_override("font_color", Color(0.56, 0.71, 0.69, 0.68))
 
 func _process(delta):
 	clock += delta
@@ -356,7 +358,7 @@ func _process(delta):
 			if not shard["taken"]:
 				var node = shard["node"]
 				node.visible = true
-				node.translation.y = shard["home"].y + sin(clock * 2.2 + float(shard["index"])) * 0.11
+				node.position.y = shard["home"].y + sin(clock * 2.2 + float(shard["index"])) * 0.11
 				node.rotation.y += delta * (0.7 + 0.12 * float(shard["index"]))
 				shard["light"].light_energy = 0.66 + 0.12 * sin(clock * 5.0)
 		_check_shard_pickups()
@@ -380,12 +382,12 @@ func _process(delta):
 	_check_safe_stations(delta)
 	if player != null and not caught and not completed:
 		exit_warning = max(0.0, exit_warning - delta)
-		if player.global_transform.origin.z < -59.4:
+		if player.global_position.z < -59.4:
 			if _collected_count() >= objective_count:
 				completed = true
 				_finish(true)
 			else:
-				player.translation.z = -59.2
+				player.position.z = -59.2
 				if exit_warning <= 0.0:
 					_set_message("BULKHEAD LOCKED — recover all three memory fragments.", 3.0)
 					exit_warning = 3.0
@@ -403,7 +405,7 @@ func _physics_process(delta):
 	if Input.is_key_pressed(KEY_D):
 		wish.x += 1.0
 	wish = (player.global_transform.basis * wish).normalized()
-	crouching = Input.is_key_pressed(KEY_CONTROL)
+	crouching = Input.is_key_pressed(KEY_CTRL)
 	var sprinting = Input.is_key_pressed(KEY_SHIFT) and not crouching and wish.length() > 0.1
 	var move_speed = CROUCH_SPEED if crouching else (RUN_SPEED if sprinting else WALK_SPEED)
 	var velocity = Vector3(wish.x * move_speed, 0.0, wish.z * move_speed)
@@ -415,35 +417,38 @@ func _physics_process(delta):
 		velocity.y -= GRAVITY * delta
 	else:
 		velocity.y = -0.2
-	velocity = player.move_and_slide(velocity, Vector3.UP)
+	player.set_velocity(velocity)
+	player.set_up_direction(Vector3.UP)
+	player.move_and_slide()
+	velocity = player.velocity
 	player.set_meta("vertical_speed", velocity.y)
 	var cam_target = 1.08 if crouching else 1.55
 	var speed_factor = min(1.0, wish.length() * (1.45 if sprinting else 0.75))
 	gait_phase += delta * (10.5 if sprinting else 7.1) * speed_factor
-	camera.translation.y = lerp(camera.translation.y, cam_target + sin(gait_phase) * 0.035 * speed_factor, delta * 8.0)
-	camera.translation.x = lerp(camera.translation.x, sin(gait_phase * 0.5) * 0.028 * speed_factor, delta * 6.0)
+	camera.position.y = lerp(camera.position.y, cam_target + sin(gait_phase) * 0.035 * speed_factor, delta * 8.0)
+	camera.position.x = lerp(camera.position.x, sin(gait_phase * 0.5) * 0.028 * speed_factor, delta * 6.0)
 	camera.fov = lerp(camera.fov, 83.0 if sprinting else 78.0, delta * 3.0)
 	if sprinting:
 		battery = max(0.0, battery - delta * 0.1)
 	_update_enemy(delta)
 
 func _input(event):
-	if event is InputEventMouseMotion and Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED and not caught and not completed:
+	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not caught and not completed:
 		player.rotate_y(-event.relative.x * 0.0019)
 		camera.rotation.x = clamp(camera.rotation.x - event.relative.y * 0.0018, -1.25, 1.25)
 	if event is InputEventMouseButton and event.pressed:
-		if Input.get_mouse_mode() != Input.MOUSE_MODE_CAPTURED:
-			Input.set_mouse_mode(Input.MOUSE_MODE_CAPTURED)
+		if Input.mouse_mode != Input.MOUSE_MODE_CAPTURED:
+			Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 	if event is InputEventKey and event.pressed and not event.echo:
-		if event.scancode == KEY_ESCAPE:
-			Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE if Input.get_mouse_mode() == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED)
-		elif event.scancode == KEY_Q and not caught and not completed:
+		if event.keycode == KEY_ESCAPE:
+			Input.mouse_mode = Input.MOUSE_MODE_VISIBLE if Input.mouse_mode == Input.MOUSE_MODE_CAPTURED else Input.MOUSE_MODE_CAPTURED
+		elif event.keycode == KEY_Q and not caught and not completed:
 			_emit_echo()
-		elif event.scancode == KEY_F and not caught and not completed:
+		elif event.keycode == KEY_F and not caught and not completed:
 			_toggle_torch()
-		elif event.scancode == KEY_E and not caught and not completed:
+		elif event.keycode == KEY_E and not caught and not completed:
 			_interact()
-		elif event.scancode == KEY_R and (caught or completed):
+		elif event.keycode == KEY_R and (caught or completed):
 			get_tree().reload_current_scene()
 
 func _emit_echo():
@@ -457,12 +462,12 @@ func _emit_echo():
 	pulse_cooldown = ECHO_COOLDOWN
 	echo_timer = ECHO_DURATION
 	enemy_awake = true
-	enemy_target = player.global_transform.origin
+	enemy_target = player.global_position
 	enemy_speed = 1.12 + float(_collected_count()) * 0.22
 	_spawn_echo_wave()
 	_set_message("ECHO SENT. Your last position is now the lure.", 3.0)
 	if enemy != null:
-		enemy.look_at(Vector3(enemy_target.x, enemy.global_transform.origin.y, enemy_target.z), Vector3.UP)
+		enemy.look_at(Vector3(enemy_target.x, enemy.global_position.y, enemy_target.z), Vector3.UP)
 
 func _toggle_torch():
 	if battery <= 1.0:
@@ -470,17 +475,17 @@ func _toggle_torch():
 		return
 	torch_on = not torch_on
 	flashlight.visible = torch_on
-	_set_message("LAMP ON  ·  the Listener can see the beam." if torch_on else "Lamp shuttered. Keep to the dark.", 1.8)
+	_set_message("LAMP ON  ·  the AudioListener3D can see the beam." if torch_on else "Lamp shuttered. Keep to the dark.", 1.8)
 
 func _interact():
 	for station_data in safe_stations:
 		var station = station_data["node"]
-		if player.global_transform.origin.distance_to(station.global_transform.origin) < 2.35:
+		if player.global_position.distance_to(station.global_position) < 2.35:
 			pulse_charges = MAX_ECHOES
 			battery = 100.0
 			_set_message("RESONATOR SYNCED  ·  pulse charges and lamp cell restored.", 3.0)
 			return
-	if player.global_transform.origin.z < -57.5 and _collected_count() >= objective_count:
+	if player.global_position.z < -57.5 and _collected_count() >= objective_count:
 		completed = true
 		_finish(true)
 	else:
@@ -490,7 +495,7 @@ func _check_shard_pickups():
 	for shard in shards:
 		if shard["taken"] or not shard["node"].visible:
 			continue
-		if player.global_transform.origin.distance_to(shard["node"].global_transform.origin) < 1.3:
+		if player.global_position.distance_to(shard["node"].global_position) < 1.3:
 			shard["taken"] = true
 			shard["node"].visible = false
 			shard["light"].light_energy = 0.0
@@ -500,13 +505,13 @@ func _check_shard_pickups():
 				_set_message("ALL MEMORIES RESTORED. The bulkhead is awake.", 4.0)
 				if exit_door != null:
 					exit_door.visible = false
-					exit_door.get_node("CollisionShape").disabled = true
+					exit_door.get_node("CollisionShape3D").disabled = true
 
 func _check_safe_stations(delta):
 	if player == null:
 		return
 	for station_data in safe_stations:
-		var d = player.global_transform.origin.distance_to(station_data["node"].global_transform.origin)
+		var d = player.global_position.distance_to(station_data["node"].global_position)
 		if d < 2.1:
 			if pulse_charges < MAX_ECHOES or battery < 99.8:
 				pulse_charges = min(MAX_ECHOES, pulse_charges + delta * 0.32)
@@ -517,8 +522,8 @@ func _check_safe_stations(delta):
 func _update_enemy(delta):
 	if enemy == null or not enemy_awake:
 		return
-	var epos = enemy.global_transform.origin
-	var ppos = player.global_transform.origin
+	var epos = enemy.global_position
+	var ppos = player.global_position
 	var delta_to_target = enemy_target - epos
 	delta_to_target.y = 0.0
 	var direction = delta_to_target.normalized()
@@ -542,20 +547,20 @@ func _update_enemy_visuals(delta):
 	var arms = enemy.get_meta("arms")
 	var legs = enemy.get_meta("legs")
 	var head = enemy.get_meta("head")
-	var moving = enemy_awake and enemy_target.distance_to(enemy.global_transform.origin) > 0.4
+	var moving = enemy_awake and enemy_target.distance_to(enemy.global_position) > 0.4
 	var rate = clock * (9.0 if moving else 2.1)
 	arms[0].rotation.x = sin(rate) * (0.26 if moving else 0.055)
 	arms[1].rotation.x = -sin(rate) * (0.26 if moving else 0.055)
 	legs[0].rotation.x = -sin(rate) * (0.31 if moving else 0.025)
 	legs[1].rotation.x = sin(rate) * (0.31 if moving else 0.025)
 	head.rotation.z = sin(clock * 0.7) * 0.075 + (0.19 if moving else 0.0)
-	enemy.translation.y = abs(sin(rate)) * (0.07 if moving else 0.018)
+	enemy.position.y = abs(sin(rate)) * (0.07 if moving else 0.018)
 	# A pulse briefly exposes a wet, red inner core; otherwise the silhouette vanishes in fog.
 	var reveal = echo_timer > 0.2
 	var core_mat = enemy.get_meta("core_material")
-	core_mat.emission_energy = 0.95 if reveal else 0.0
+	core_mat.emission_energy_multiplier = 0.95 if reveal else 0.0
 	for eye in eye_nodes:
-		eye.visible = reveal or player.global_transform.origin.distance_to(enemy.global_transform.origin) < 6.0
+		eye.visible = reveal or player.global_position.distance_to(enemy.global_position) < 6.0
 
 func _update_flicker():
 	for entry in flicker_lights:
@@ -568,11 +573,11 @@ func _update_flicker():
 		lamp.light_energy = base * wobble
 
 func _spawn_echo_wave():
-	var ring = MeshInstance.new()
+	var ring = MeshInstance3D.new()
 	ring.mesh = _ring_mesh(0.075, 0.12)
-	ring.translation = player.global_transform.origin + Vector3(0, 0.08, 0)
+	ring.position = player.global_position + Vector3(0, 0.08, 0)
 	var mat = _emissive(Color(0.28, 0.89, 0.8, 0.78), 1.4)
-	mat.flags_transparent = true
+	mat.transparency = BaseMaterial3D.TRANSPARENCY_ALPHA
 	ring.material_override = mat
 	add_child(ring)
 	echo_rings.append({"node": ring, "mat": mat, "age": 0.0})
@@ -588,7 +593,7 @@ func _animate_echo_rings(delta):
 		else:
 			item["node"].scale = Vector3(0.3 + t * 14.0, 1.0, 0.3 + t * 14.0)
 			item["mat"].albedo_color.a = (1.0 - t) * 0.68
-			item["mat"].emission_energy = (1.0 - t) * 1.35
+			item["mat"].emission_energy_multiplier = (1.0 - t) * 1.35
 
 func _update_hud():
 	if ui_status == null:
@@ -600,17 +605,17 @@ func _update_hud():
 	var count = _collected_count()
 	ui_objective.text = "RECOVER MEMORIES  %d / %d     ·     KEEP THE BULKHEAD IN SIGHT" % [count, objective_count]
 	if echo_timer > 0.0:
-		ui_reticle.add_color_override("font_color", Color(0.42, 1.0, 0.87))
+		ui_reticle.add_theme_color_override("font_color", Color(0.42, 1.0, 0.87))
 	else:
-		ui_reticle.add_color_override("font_color", Color(0.55, 0.86, 0.83, 0.68))
+		ui_reticle.add_theme_color_override("font_color", Color(0.55, 0.86, 0.83, 0.68))
 	if darkness_overlay != null:
 		var pressure = 0.0
 		if enemy != null and player != null:
-			pressure = clamp(1.0 - player.global_transform.origin.distance_to(enemy.global_transform.origin) / 14.0, 0.0, 1.0)
-		darkness_overlay.material.set_shader_param("pressure", pressure)
+			pressure = clamp(1.0 - player.global_position.distance_to(enemy.global_position) / 14.0, 0.0, 1.0)
+		darkness_overlay.material.set_shader_parameter("pressure", pressure)
 
 func _finish(won):
-	Input.set_mouse_mode(Input.MOUSE_MODE_VISIBLE)
+	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
 	var panel = ColorRect.new()
 	panel.color = Color(0.003, 0.008, 0.012, 0.9)
 	panel.anchor_right = 1.0
@@ -622,13 +627,13 @@ func _finish(won):
 	headline.anchor_right = 0.5
 	headline.anchor_top = 0.5
 	headline.anchor_bottom = 0.5
-	headline.rect_position = Vector2(-500, -74)
+	headline.position = Vector2(-500, -74)
 	var body = _label(panel, "", Vector2(0, 12), Vector2(980, 96), 18, Color(0.68, 0.77, 0.74), true)
 	body.anchor_left = 0.5
 	body.anchor_right = 0.5
 	body.anchor_top = 0.5
 	body.anchor_bottom = 0.5
-	body.rect_position = Vector2(-490, 14)
+	body.position = Vector2(-490, 14)
 	if won:
 		headline.text = "THE ARCHIVE LETS YOU GO"
 		body.text = "Three memories restored. The signal falls silent.\n\nPress R to descend again."
@@ -684,68 +689,68 @@ void fragment() {
 """
 	var material = ShaderMaterial.new()
 	material.shader = shader
-	material.set_shader_param("base_tint", Vector3(tint.r, tint.g, tint.b))
-	material.set_shader_param("tile_scale", tiling)
-	material.set_shader_param("base_metalness", metalness)
-	material.set_shader_param("base_roughness", roughness)
+	material.set_shader_parameter("base_tint", Vector3(tint.r, tint.g, tint.b))
+	material.set_shader_parameter("tile_scale", tiling)
+	material.set_shader_parameter("base_metalness", metalness)
+	material.set_shader_parameter("base_roughness", roughness)
 	return material
 
 func _mat(color, metallic, roughness, emission = Color(0, 0, 0)):
-	var material = SpatialMaterial.new()
+	var material = StandardMaterial3D.new()
 	material.albedo_color = color
 	material.metallic = metallic
 	material.roughness = roughness
 	if emission.r + emission.g + emission.b > 0.001:
 		material.emission_enabled = true
 		material.emission = emission
-		material.emission_energy = 0.45
+		material.emission_energy_multiplier = 0.45
 	return material
 
 func _emissive(color, energy):
-	var material = SpatialMaterial.new()
+	var material = StandardMaterial3D.new()
 	material.albedo_color = color
 	material.emission_enabled = true
 	material.emission = Color(color.r, color.g, color.b)
-	material.emission_energy = energy
+	material.emission_energy_multiplier = energy
 	material.roughness = 0.36
 	return material
 
 func _box(parent, label, pos, size, material, solid):
-	var mesh = MeshInstance.new()
+	var mesh = MeshInstance3D.new()
 	mesh.name = label
-	var cube = CubeMesh.new()
+	var cube = BoxMesh.new()
 	cube.size = size
 	mesh.mesh = cube
 	mesh.material_override = material
 	if solid:
-		var body = StaticBody.new()
+		var body = StaticBody3D.new()
 		body.name = label + " collision"
-		body.translation = pos
+		body.position = pos
 		parent.add_child(body)
-		mesh.translation = Vector3.ZERO
+		mesh.position = Vector3.ZERO
 		body.add_child(mesh)
-		var shape = CollisionShape.new()
-		shape.name = "CollisionShape"
-		var boxshape = BoxShape.new()
-		boxshape.extents = size * 0.5
+		var shape = CollisionShape3D.new()
+		shape.name = "CollisionShape3D"
+		var boxshape = BoxShape3D.new()
+		boxshape.size = size
 		shape.shape = boxshape
 		body.add_child(shape)
 		return body
-	mesh.translation = pos
+	mesh.position = pos
 	parent.add_child(mesh)
 	return mesh
 
 func _part(parent, mesh, pos, material):
-	var node = MeshInstance.new()
+	var node = MeshInstance3D.new()
 	node.mesh = mesh
 	node.material_override = material
-	node.translation = pos
+	node.position = pos
 	parent.add_child(node)
 	return node
 
 func _omni(pos, color, energy, radius, shadows):
-	var light = OmniLight.new()
-	light.translation = pos
+	var light = OmniLight3D.new()
+	light.position = pos
 	light.light_color = color
 	light.light_energy = energy
 	light.omni_range = radius
@@ -776,22 +781,20 @@ func _ring_mesh(inner_radius, outer_radius):
 func _label(parent, text, position, size, font_size, color, centered):
 	var label = Label.new()
 	label.text = text
-	label.rect_position = position
-	label.rect_size = size
+	label.position = position
+	label.size = size
 	label.clip_text = true
-	label.add_color_override("font_color", color)
-	label.add_color_override("font_color_shadow", Color(0.0, 0.01, 0.014, 0.95))
-	label.add_constant_override("shadow_offset_x", 2)
-	label.add_constant_override("shadow_offset_y", 2)
-	label.add_font_override("font", _font(font_size))
+	label.add_theme_color_override("font_color", color)
+	label.add_theme_color_override("font_color_shadow", Color(0.0, 0.01, 0.014, 0.95))
+	label.add_theme_constant_override("shadow_offset_x", 2)
+	label.add_theme_constant_override("shadow_offset_y", 2)
+	label.add_theme_font_override("font", _font())
+	label.add_theme_font_size_override("font_size", font_size)
 	if centered:
-		label.align = Label.ALIGN_CENTER
-		label.valign = Label.VALIGN_CENTER
+		label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		label.vertical_alignment = VERTICAL_ALIGNMENT_CENTER
 	parent.add_child(label)
 	return label
 
-func _font(size):
-	var font = DynamicFont.new()
-	font.size = size
-	font.font_data = load("res://assets/fonts/DejaVuSans.ttf")
-	return font
+func _font():
+	return load("res://assets/fonts/DejaVuSans.ttf")

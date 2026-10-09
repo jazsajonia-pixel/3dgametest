@@ -1,13 +1,14 @@
 [remap]
 
 importer="wav"
-type="AudioStreamSample"
-path="res://.import/drowned_heartbeat.wav-469b4fdff27c9ccaafd731495c50d72f.sample"
+type="AudioStreamWAV"
+uid="uid://6hmx4irke2xq"
+path="res://.godot/imported/drowned_heartbeat.wav-469b4fdff27c9ccaafd731495c50d72f.sample"
 
 [deps]
 
 source_file="res://assets/audio/drowned_heartbeat.wav"
-dest_files=[ "res://.import/drowned_heartbeat.wav-469b4fdff27c9ccaafd731495c50d72f.sample" ]
+dest_files=["res://.godot/imported/drowned_heartbeat.wav-469b4fdff27c9ccaafd731495c50d72f.sample"]
 
 [params]
 
@@ -17,5 +18,7 @@ force/max_rate=false
 force/max_rate_hz=44100
 edit/trim=false
 edit/normalize=false
-edit/loop=false
+edit/loop_mode=0
+edit/loop_begin=0
+edit/loop_end=-1
 compress/mode=0
