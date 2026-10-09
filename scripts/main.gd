@@ -24,6 +24,7 @@ var ui_objective = null
 var ui_hint = null
 var ui_message = null
 var ui_reticle = null
+var ui_layer = null
 var darkness_overlay = null
 var shards = []
 var safe_stations = []
@@ -49,6 +50,14 @@ var pulse_player = null
 var heart_player = null
 var exit_warning = 0.0
 var objective_count = 3
+var mobile_stick_base = null
+var mobile_stick_knob = null
+var mobile_move_vector = Vector2.ZERO
+var mobile_move_touch_index = -1
+var mobile_look_touch_index = -1
+var mobile_sprinting = false
+var mobile_crouching = false
+var mobile_action_buttons = {}
 
 func _ready():
 	_setup_environment()
@@ -310,6 +319,7 @@ func _build_hud():
 	var layer = CanvasLayer.new()
 	layer.layer = 10
 	add_child(layer)
+	ui_layer = layer
 	darkness_overlay = ColorRect.new()
 	darkness_overlay.anchor_right = 1.0
 	darkness_overlay.anchor_bottom = 1.0
@@ -338,13 +348,176 @@ void fragment() {
 	ui_reticle.anchor_bottom = 0.5
 	ui_status = _label(layer, "", Vector2(32, 48), Vector2(700, 28), 17, Color(0.61, 0.82, 0.79), false)
 	ui_objective = _label(layer, "", Vector2(32, 78), Vector2(900, 28), 16, Color(0.84, 0.86, 0.78), false)
-	ui_hint = _label(layer, "WASD MOVE   SHIFT RUN   CTRL CROUCH\nQ LISTEN   F LAMP   E RESONATE   ESC RELEASE MOUSE", Vector2(32, -92), Vector2(700, 72), 14, Color(0.48, 0.61, 0.61), false)
-	ui_hint.anchor_top = 1.0
-	ui_hint.anchor_bottom = 1.0
+	ui_hint = _label(layer, "TOUCH: LEFT STICK MOVE   •   DRAG RIGHT TO LOOK\nECHO   LAMP   USE   RUN   CROUCH", Vector2(32, 112), Vector2(760, 46), 13, Color(0.48, 0.61, 0.61), false)
 	ui_message = _label(layer, "", Vector2(300, 390), Vector2(1000, 50), 22, Color(0.81, 0.94, 0.88), true)
 	ui_message.visible = false
 	var title = _label(layer, "THE HUM  /  ARCHIVE OF THE DROWNED", Vector2(32, 19), Vector2(720, 26), 15, Color(0.58, 0.72, 0.72), false)
 	title.add_theme_color_override("font_color", Color(0.56, 0.71, 0.69, 0.68))
+	_build_mobile_controls(layer)
+
+func _build_mobile_controls(layer):
+	var mobile_layer = Control.new()
+	mobile_layer.name = "MobileControls"
+	mobile_layer.anchor_right = 1.0
+	mobile_layer.anchor_bottom = 1.0
+	mobile_layer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	layer.add_child(mobile_layer)
+
+	mobile_stick_base = Panel.new()
+	mobile_stick_base.name = "MoveStick"
+	mobile_stick_base.anchor_top = 1.0
+	mobile_stick_base.anchor_bottom = 1.0
+	mobile_stick_base.offset_left = 34
+	mobile_stick_base.offset_top = -222
+	mobile_stick_base.offset_right = 206
+	mobile_stick_base.offset_bottom = -50
+	mobile_stick_base.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var base_style = StyleBoxFlat.new()
+	base_style.bg_color = Color(0.035, 0.11, 0.13, 0.46)
+	base_style.border_color = Color(0.35, 0.78, 0.75, 0.62)
+	base_style.border_width_left = 2
+	base_style.border_width_top = 2
+	base_style.border_width_right = 2
+	base_style.border_width_bottom = 2
+	base_style.corner_radius_top_left = 86
+	base_style.corner_radius_top_right = 86
+	base_style.corner_radius_bottom_left = 86
+	base_style.corner_radius_bottom_right = 86
+	mobile_stick_base.add_theme_stylebox_override("panel", base_style)
+	mobile_layer.add_child(mobile_stick_base)
+
+	mobile_stick_knob = Panel.new()
+	mobile_stick_knob.name = "StickKnob"
+	mobile_stick_knob.position = Vector2(55, 55)
+	mobile_stick_knob.size = Vector2(62, 62)
+	mobile_stick_knob.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var knob_style = StyleBoxFlat.new()
+	knob_style.bg_color = Color(0.15, 0.43, 0.45, 0.82)
+	knob_style.border_color = Color(0.56, 0.91, 0.86, 0.9)
+	knob_style.border_width_left = 2
+	knob_style.border_width_top = 2
+	knob_style.border_width_right = 2
+	knob_style.border_width_bottom = 2
+	knob_style.corner_radius_top_left = 31
+	knob_style.corner_radius_top_right = 31
+	knob_style.corner_radius_bottom_left = 31
+	knob_style.corner_radius_bottom_right = 31
+	mobile_stick_knob.add_theme_stylebox_override("panel", knob_style)
+	mobile_stick_base.add_child(mobile_stick_knob)
+
+	var move_caption = _label(mobile_layer, "MOVE", Vector2(34, -246), Vector2(172, 20), 12, Color(0.72, 0.89, 0.85, 0.88), true)
+	move_caption.anchor_top = 1.0
+	move_caption.anchor_bottom = 1.0
+	var look_caption = _label(mobile_layer, "DRAG RIGHT SIDE TO LOOK", Vector2(-264, -294), Vector2(246, 22), 12, Color(0.72, 0.89, 0.85, 0.78), true)
+	look_caption.anchor_left = 1.0
+	look_caption.anchor_right = 1.0
+	look_caption.anchor_top = 1.0
+	look_caption.anchor_bottom = 1.0
+
+	var echo_button = _mobile_button(mobile_layer, "ECHO", -216, -258, -118, -190, false)
+	echo_button.pressed.connect(_emit_echo)
+	var lamp_button = _mobile_button(mobile_layer, "LAMP", -108, -258, -10, -190, false)
+	lamp_button.pressed.connect(_toggle_torch)
+	var use_button = _mobile_button(mobile_layer, "USE", -216, -182, -118, -114, false)
+	use_button.pressed.connect(_interact)
+	var run_button = _mobile_button(mobile_layer, "RUN", -108, -182, -10, -114, true)
+	run_button.toggled.connect(_on_mobile_run_toggled)
+	var crouch_button = _mobile_button(mobile_layer, "CROUCH", -162, -106, -64, -38, true)
+	crouch_button.toggled.connect(_on_mobile_crouch_toggled)
+
+func _mobile_button(parent, button_text, left, top, right, bottom, toggle):
+	var button = Button.new()
+	button.name = button_text + "Button"
+	button.text = button_text
+	button.anchor_left = 1.0
+	button.anchor_right = 1.0
+	button.anchor_top = 1.0
+	button.anchor_bottom = 1.0
+	button.offset_left = left
+	button.offset_top = top
+	button.offset_right = right
+	button.offset_bottom = bottom
+	button.toggle_mode = toggle
+	button.focus_mode = Control.FOCUS_NONE
+	button.mouse_filter = Control.MOUSE_FILTER_STOP
+	button.add_theme_font_override("font", _font())
+	button.add_theme_font_size_override("font_size", 14)
+	button.add_theme_color_override("font_color", Color(0.83, 0.94, 0.90))
+	button.add_theme_color_override("font_hover_color", Color(0.95, 1.0, 0.97))
+	button.add_theme_color_override("font_pressed_color", Color(1.0, 1.0, 1.0))
+	button.add_theme_stylebox_override("normal", _mobile_button_style(Color(0.025, 0.075, 0.09, 0.80), Color(0.24, 0.56, 0.57, 0.78)))
+	button.add_theme_stylebox_override("hover", _mobile_button_style(Color(0.055, 0.17, 0.18, 0.92), Color(0.40, 0.78, 0.73, 0.95)))
+	button.add_theme_stylebox_override("pressed", _mobile_button_style(Color(0.08, 0.29, 0.29, 0.98), Color(0.55, 0.94, 0.86, 1.0)))
+	button.add_theme_stylebox_override("hover_pressed", _mobile_button_style(Color(0.08, 0.29, 0.29, 0.98), Color(0.55, 0.94, 0.86, 1.0)))
+	parent.add_child(button)
+	mobile_action_buttons[button_text] = button
+	return button
+
+func _mobile_button_style(fill, border):
+	var style = StyleBoxFlat.new()
+	style.bg_color = fill
+	style.border_color = border
+	style.border_width_left = 2
+	style.border_width_top = 2
+	style.border_width_right = 2
+	style.border_width_bottom = 2
+	style.corner_radius_top_left = 14
+	style.corner_radius_top_right = 14
+	style.corner_radius_bottom_left = 14
+	style.corner_radius_bottom_right = 14
+	style.content_margin_left = 5
+	style.content_margin_right = 5
+	style.content_margin_top = 4
+	style.content_margin_bottom = 4
+	return style
+
+func _on_mobile_run_toggled(enabled):
+	mobile_sprinting = enabled
+
+func _on_mobile_crouch_toggled(enabled):
+	mobile_crouching = enabled
+
+func _handle_mobile_touch(event):
+	if event is InputEventScreenTouch:
+		if event.pressed:
+			if mobile_move_touch_index < 0 and mobile_stick_base.get_global_rect().has_point(event.position):
+				mobile_move_touch_index = event.index
+				_update_mobile_stick(event.position)
+			elif mobile_look_touch_index < 0 and event.position.x >= get_viewport().get_visible_rect().size.x * 0.43 and event.position.y >= get_viewport().get_visible_rect().size.y * 0.18 and not _touch_over_mobile_button(event.position):
+				mobile_look_touch_index = event.index
+		else:
+			if event.index == mobile_move_touch_index:
+				mobile_move_touch_index = -1
+				mobile_move_vector = Vector2.ZERO
+				mobile_stick_knob.position = Vector2(55, 55)
+			if event.index == mobile_look_touch_index:
+				mobile_look_touch_index = -1
+	elif event is InputEventScreenDrag:
+		if event.index == mobile_move_touch_index:
+			_update_mobile_stick(event.position)
+		elif event.index == mobile_look_touch_index:
+			_apply_mobile_look(event.relative)
+
+func _update_mobile_stick(screen_position):
+	var center = mobile_stick_base.global_position + mobile_stick_base.size * 0.5
+	var displacement = screen_position - center
+	var radius = 54.0
+	if displacement.length() > radius:
+		displacement = displacement.normalized() * radius
+	mobile_stick_knob.position = Vector2(55, 55) + displacement
+	mobile_move_vector = Vector2(displacement.x / radius, -displacement.y / radius)
+
+func _apply_mobile_look(relative_motion):
+	if caught or completed:
+		return
+	player.rotate_y(-relative_motion.x * 0.0036)
+	camera.rotation.x = clamp(camera.rotation.x - relative_motion.y * 0.0032, -1.25, 1.25)
+
+func _touch_over_mobile_button(screen_position):
+	for button in mobile_action_buttons.values():
+		if button.get_global_rect().has_point(screen_position):
+			return true
+	return false
 
 func _process(delta):
 	clock += delta
@@ -395,18 +568,18 @@ func _process(delta):
 func _physics_process(delta):
 	if player == null or caught or completed:
 		return
-	var wish = Vector3.ZERO
+	var local_wish = Vector3(mobile_move_vector.x, 0.0, -mobile_move_vector.y)
 	if Input.is_key_pressed(KEY_W):
-		wish.z -= 1.0
+		local_wish.z -= 1.0
 	if Input.is_key_pressed(KEY_S):
-		wish.z += 1.0
+		local_wish.z += 1.0
 	if Input.is_key_pressed(KEY_A):
-		wish.x -= 1.0
+		local_wish.x -= 1.0
 	if Input.is_key_pressed(KEY_D):
-		wish.x += 1.0
-	wish = (player.global_transform.basis * wish).normalized()
-	crouching = Input.is_key_pressed(KEY_CTRL)
-	var sprinting = Input.is_key_pressed(KEY_SHIFT) and not crouching and wish.length() > 0.1
+		local_wish.x += 1.0
+	var wish = (player.global_transform.basis * local_wish).normalized()
+	crouching = Input.is_key_pressed(KEY_CTRL) or mobile_crouching
+	var sprinting = (Input.is_key_pressed(KEY_SHIFT) or mobile_sprinting) and not crouching and wish.length() > 0.1
 	var move_speed = CROUCH_SPEED if crouching else (RUN_SPEED if sprinting else WALK_SPEED)
 	var velocity = Vector3(wish.x * move_speed, 0.0, wish.z * move_speed)
 	var vertical_speed = 0.0
@@ -433,6 +606,9 @@ func _physics_process(delta):
 	_update_enemy(delta)
 
 func _input(event):
+	if event is InputEventScreenTouch or event is InputEventScreenDrag:
+		_handle_mobile_touch(event)
+		return
 	if event is InputEventMouseMotion and Input.mouse_mode == Input.MOUSE_MODE_CAPTURED and not caught and not completed:
 		player.rotate_y(-event.relative.x * 0.0019)
 		camera.rotation.x = clamp(camera.rotation.x - event.relative.y * 0.0018, -1.25, 1.25)
@@ -589,7 +765,7 @@ func _animate_echo_rings(delta):
 		var t = item["age"] / 1.12
 		if t >= 1.0:
 			item["node"].queue_free()
-			echo_rings.remove(i)
+			echo_rings.remove_at(i)
 		else:
 			item["node"].scale = Vector3(0.3 + t * 14.0, 1.0, 0.3 + t * 14.0)
 			item["mat"].albedo_color.a = (1.0 - t) * 0.68
@@ -621,7 +797,7 @@ func _finish(won):
 	panel.anchor_right = 1.0
 	panel.anchor_bottom = 1.0
 	panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	get_node("CanvasLayer").add_child(panel)
+	ui_layer.add_child(panel)
 	var headline = _label(panel, "", Vector2(0, -74), Vector2(1000, 74), 34, Color(0.71, 0.91, 0.86), true)
 	headline.anchor_left = 0.5
 	headline.anchor_right = 0.5
@@ -640,6 +816,26 @@ func _finish(won):
 	else:
 		headline.text = "IT FOLLOWED THE ECHO"
 		body.text = "The Listener found the last place you called from.\n\nPress R to try another way."
+	var restart_button = Button.new()
+	restart_button.text = "PLAY AGAIN"
+	restart_button.anchor_left = 0.5
+	restart_button.anchor_right = 0.5
+	restart_button.anchor_top = 0.5
+	restart_button.anchor_bottom = 0.5
+	restart_button.position = Vector2(-110, 126)
+	restart_button.size = Vector2(220, 64)
+	restart_button.focus_mode = Control.FOCUS_NONE
+	restart_button.add_theme_font_override("font", _font())
+	restart_button.add_theme_font_size_override("font_size", 18)
+	restart_button.add_theme_color_override("font_color", Color(0.85, 0.96, 0.91))
+	restart_button.add_theme_stylebox_override("normal", _mobile_button_style(Color(0.025, 0.075, 0.09, 0.92), Color(0.24, 0.56, 0.57, 0.90)))
+	restart_button.add_theme_stylebox_override("pressed", _mobile_button_style(Color(0.08, 0.29, 0.29, 1.0), Color(0.55, 0.94, 0.86, 1.0)))
+	restart_button.pressed.connect(_restart_game)
+	panel.add_child(restart_button)
+	mobile_action_buttons["PLAY AGAIN"] = restart_button
+
+func _restart_game():
+	get_tree().reload_current_scene()
 
 func _set_message(text, duration):
 	if ui_message == null:

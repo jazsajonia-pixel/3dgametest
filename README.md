@@ -13,15 +13,17 @@ Most horror games make noise a passive penalty. Here, **Q sends a deliberate ech
 - First-person mouse-look, walking, running, crouching, head-bob and subtle FOV shift.
 - Original procedural 3D corridor architecture, wet reflective floor accents, service bays, conduits, warning details, fog, filmic tonemapping, emissive lamps and shadow-casting lights.
 - A hand-assembled articulated creature with breathing, head-tilt, limb-swing and pulse-reveal animation.
+- Mobile-first touchscreen HUD: a left analog stick, right-side touch-look, ECHO/LAMP/USE actions, latched RUN/CROUCH toggles, and a touch-friendly restart button. Keyboard and mouse remain available for desktop testing.
 - Echo rings, timed shard visibility, three collectible memory fragments, a locked exit, safe recharge plinths, flashlight battery, and caught/win states.
 - All level geometry, materials, creature parts, lighting, HUD treatment and animations are created at runtime in GDScript. The ambient drone, echo call, and heartbeat are synthesized locally (`tools/generate_audio.py`); the included DejaVu Sans font is licensed under its bundled license. **No internet game assets or extra connectors are required.**
 
 ## Run it
 
 1. Open `project.godot` in Godot 4.7.2 (or a compatible Godot 4 release) and run the main scene. The scene is `res://scenes/main.tscn`.
-2. Click the game window if needed to capture the mouse. Press **Esc** to release it; click to recapture.
+2. On phones/tablets, use the **left virtual stick** to move, drag on the **right side** to look, and tap **ECHO**, **LAMP**, **USE**, **RUN**, or **CROUCH**. The end-of-run screen includes a touch-friendly **PLAY AGAIN** button.
+3. Keyboard/mouse controls remain available for desktop testing: click the game window to capture the mouse; press **Esc** to release it.
 
-| Key | Action |
+| Desktop key | Action |
 |---|---|
 | WASD | Move |
 | Shift | Run faster (slightly drains the lamp cell) |

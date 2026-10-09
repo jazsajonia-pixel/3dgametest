@@ -18,7 +18,11 @@ func _capture():
         quit(1)
         return
     print("Captured screenshots/archive-preview.png")
+    game.ambient_player.stop()
+    game.pulse_player.stream = null
+    game.heart_player.stream = null
     image = null
+    await create_timer(0.35).timeout
     game.queue_free()
     game = null
     await process_frame
