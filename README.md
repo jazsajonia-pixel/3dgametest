@@ -44,6 +44,11 @@ Run `python3 tools/generate_audio.py` from the project root. It regenerates the 
 
 The project now targets **Godot 4.7.2**. The earlier Godot 3 version mismatch has been resolved; the project uses Godot 4 node classes, scene format, input, rendering, and UI APIs.
 
+## Development
+
+- [Full development roadmap and researched asset sources](docs/DEVELOPMENT_ROADMAP.md)
+- [Daily automation task prompt and Scheduler text](docs/DAILY_AUTOMATION_PROMPT.md)
+
 ## Scope
 
 This is a playable **vertical-slice prototype**, not a finished commercial production: its art is purpose-built procedural geometry rather than photogrammetry or licensed character scans. It favors atmosphere, readable silhouettes, interaction, and a complete short gameplay loop. No third-party visual assets are bundled.
