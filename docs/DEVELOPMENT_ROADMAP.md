@@ -10,7 +10,7 @@ The project targets **Godot 4.7.2** and mobile devices. Keep the existing GL Com
 
 ## Current baseline
 
-The repository already contains a playable procedural corridor, first-person movement, keyboard/mouse support, a mobile virtual stick and touch-look, ECHO/LAMP/USE/RUN/CROUCH buttons, a touch-friendly restart button, the Listener, pulse-revealed fragments, recharge stations, an exit, generated ambient/pulse/heartbeat audio, and a Godot smoke-test script. The mobile HUD and core gameplay loop were tested in Godot 4.7.2. The scene and much of its art are currently built in GDScript; **no third-party 3D assets have been imported yet**.
+The repository already contains a playable procedural corridor, first-person movement, keyboard/mouse support, a mobile virtual stick and touch-look, ECHO/LAMP/USE/RUN/CROUCH buttons, a touch-friendly restart button, the Listener, pulse-revealed fragments, recharge stations, an exit, generated ambient/pulse/heartbeat audio, and Godot smoke tests. The mobile HUD and core gameplay loop were tested in Godot 4.7.2. The scene and most of its art remain GDScript-built; **one license-verified third-party 3D asset is now imported**.
 
 Use this as a baseline, not as a reason to recreate systems that already work. At the start of each development run, inspect the repository, recent commits, tests, and progress ledger below. Update this document as work is completed.
 
@@ -44,14 +44,15 @@ Use this as a baseline, not as a reason to recreate systems that already work. A
 
 Research individual assets before downloading. Prefer official source pages with explicit **CC0** or another clearly commercial-game-compatible license. Record the exact asset name, source page, license, retrieval date, modifications, and any required credit. Do not infer the license from a search result, marketplace label, or another asset in the same collection. Do not download paid editions, start trials, make purchases, or bundle files whose rights are unclear.
 
-Verified starting points for later asset evaluation:
+Imported example and verified starting points for continued asset evaluation:
 
+- **Already imported — Poly Haven Modular Industrial Pipes 01:** a 12K-triangle, 2 m industrial prop set with a 1K glTF variant and PBR maps. It is CC0; the project uses it at 75% scale in the second bay and records provenance in `assets/third_party/ASSET_SOURCES.md`. [7]
 - **Quaternius Modular Sci-Fi MEGAKIT:** a 277-model modular environment pack with glTF/FBX/OBJ/Blend options and a CC0 license. Its source version includes Godot implementation details, while the page says only part of the collection is free. Use only an explicitly free download. Inspect the stylized look before using it; it may be better for selected doors, panels, or blockout pieces than for the game’s grounded concrete surfaces. [1]
 - **Poly Haven Concrete Wall 003:** a worn, painted concrete PBR material with diffuse, ambient-occlusion, roughness, and normal-map options. The page lists resolutions from 1K through 16K and CC0. Start at 1K or 2K for mobile; only use larger maps after measuring the quality and memory cost. [2] [3]
 - **ambientCG Concrete 047 A:** a concrete PBR material captured through surface photogrammetry. The asset page offers several resolutions and states that ambientCG assets are CC0. Prefer a size appropriate to the target device; the listed 4K JPG archive is substantially larger than the 1K option. [4]
 - **Poly Haven Industrial & Infrastructure models:** a useful category to search for pipes, fixtures, machinery, and other environmental props. The category page is a search pool, not proof that a specific model fits. Verify each chosen model page, file format, license, scale, and mobile performance before importing. Poly Haven’s license page says its HDRIs, textures, and 3D models are CC0. [5] [6]
 
-These are researched candidates, **not assets already present in the project**. Re-check each source and exact file before use. If a candidate clashes with the intended visual style, search for a better match or keep the existing custom geometry. Avoid importing a whole pack when only one or two pieces are useful.
+The later material and model candidates are researched, **not yet imported**; Modular Industrial Pipes 01 is the first third-party asset in the project. Re-check each source and exact file before further use. If a candidate clashes with the intended visual style, search for a better match or keep the existing custom geometry. Avoid importing a whole pack when only one or two pieces are useful.
 
 **Done when:** Each imported file has a traceable origin and license; the art direction is consistent; Godot imports the files without errors; the game still runs on the intended mobile renderer.
 
@@ -173,3 +174,4 @@ Keep the latest entry at the bottom. Each scheduled run must read this history b
 [4]: https://ambientcg.com/view?id=Concrete047A "Concrete 047 A — ambientCG"
 [5]: https://polyhaven.com/models/industrial-infrastructure "Industrial & Infrastructure Models — Poly Haven"
 [6]: https://polyhaven.com/models "Poly Haven 3D Models"
+[7]: https://polyhaven.com/a/modular_industrial_pipes_01 "Modular Industrial Pipes 01 — Poly Haven"

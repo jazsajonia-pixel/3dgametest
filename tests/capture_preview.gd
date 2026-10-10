@@ -6,6 +6,10 @@ func _initialize():
 func _capture():
     var game = load("res://scenes/main.tscn").instantiate()
     root.add_child(game)
+    game.player.position = Vector3(5.3, 0.92, -23.0)
+    game.player.rotation.y = -1.55
+    game.camera.rotation.x = -0.42
+    game._toggle_torch()
     game._emit_echo()
     game.ui_message.visible = false
     game.message_timer = 0.0

@@ -11,11 +11,11 @@ Most horror games make noise a passive penalty. Here, **Q sends a deliberate ech
 ## Features in this prototype
 
 - First-person mouse-look, walking, running, crouching, head-bob and subtle FOV shift.
-- Original procedural 3D corridor architecture, wet reflective floor accents, service bays, conduits, warning details, fog, filmic tonemapping, emissive lamps and shadow-casting lights.
+- Procedural 3D corridor architecture, wet reflective floor accents, service bays, conduits, warning details, fog, filmic tonemapping, emissive lamps and shadow-casting lights, with a CC0 textured industrial pipe assembly in one service bay.
 - A hand-assembled articulated creature with breathing, head-tilt, limb-swing and pulse-reveal animation.
 - Mobile-first touchscreen HUD: a left analog stick, right-side touch-look, ECHO/LAMP/USE actions, latched RUN/CROUCH toggles, and a touch-friendly restart button. Keyboard and mouse remain available for desktop testing.
 - Echo rings, timed shard visibility, three collectible memory fragments, a locked exit, safe recharge plinths, flashlight battery, and caught/win states.
-- All level geometry, materials, creature parts, lighting, HUD treatment and animations are created at runtime in GDScript. The ambient drone, echo call, and heartbeat are synthesized locally (`tools/generate_audio.py`); the included DejaVu Sans font is licensed under its bundled license. **No internet game assets or extra connectors are required.**
+- Most level geometry, creature parts, lighting, HUD treatment and animations are created at runtime in GDScript. The imported Poly Haven pipe assembly and its 1K PBR maps are CC0 and recorded in [`assets/third_party/ASSET_SOURCES.md`](assets/third_party/ASSET_SOURCES.md). The ambient drone, echo call, and heartbeat are synthesized locally (`tools/generate_audio.py`); the included DejaVu Sans font is licensed under its bundled license.
 
 ## Run it
 
@@ -51,4 +51,4 @@ The project now targets **Godot 4.7.2**. The earlier Godot 3 version mismatch ha
 
 ## Scope
 
-This is a playable **vertical-slice prototype**, not a finished commercial production: its art is purpose-built procedural geometry rather than photogrammetry or licensed character scans. It favors atmosphere, readable silhouettes, interaction, and a complete short gameplay loop. No third-party visual assets are bundled.
+This is a playable **vertical-slice prototype**, not a finished commercial production: most art is purpose-built procedural geometry rather than photogrammetry or licensed character scans. It favors atmosphere, readable silhouettes, interaction, and a complete short gameplay loop. One third-party CC0 pipe asset is bundled; see the asset-source manifest for provenance.

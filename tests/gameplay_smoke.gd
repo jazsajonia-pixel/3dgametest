@@ -3,6 +3,26 @@ extends SceneTree
 func _initialize():
     call_deferred("_run_checks")
 
+func _assert_imported_pipe_asset(game):
+    var prop = game.industrial_pipe_prop
+    assert(prop != null)
+    assert(prop.name == "ModularIndustrialPipes_CC0")
+    assert(prop.position.is_equal_approx(Vector3(6.85, 0.75, -23.0)))
+    assert(is_equal_approx(prop.rotation.y, PI * 0.5))
+    var meshes = prop.find_children("*", "MeshInstance3D", true, false)
+    assert(meshes.size() == 8)
+    for mesh_node in meshes:
+        var mesh = mesh_node as MeshInstance3D
+        assert(mesh.mesh.get_surface_count() == 1)
+        var material = mesh.get_active_material(0) as StandardMaterial3D
+        assert(material != null)
+        assert(material.albedo_texture != null)
+        assert(material.normal_enabled and material.normal_texture != null)
+        assert(material.roughness_texture != null)
+    var collision = prop.get_node("PipeAssemblyCollision/CollisionShape3D")
+    assert(collision.shape is BoxShape3D)
+    assert(collision.shape.size.is_equal_approx(Vector3(2.05, 2.0, 0.62)))
+
 func _run_checks():
     var game = load("res://scenes/main.tscn").instantiate()
     root.add_child(game)
@@ -13,6 +33,7 @@ func _run_checks():
     assert(game.shards.size() == 3)
     assert(game.pulse_charges == 3)
     assert(not game.flashlight.visible)
+    _assert_imported_pipe_asset(game)
     assert(game.mobile_action_buttons.size() == 5)
     var stick_center = game.mobile_stick_base.global_position + game.mobile_stick_base.size * 0.5
     var touch_down = InputEventScreenTouch.new()

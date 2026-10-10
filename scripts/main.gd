@@ -19,6 +19,7 @@ var enemy = null
 var enemy_core = null
 var enemy_eyes = []
 var exit_door = null
+var industrial_pipe_prop = null
 var ui_status = null
 var ui_objective = null
 var ui_hint = null
@@ -170,6 +171,8 @@ func _build_world():
 		var bay_light = _omni(Vector3(center_x, 3.82, bz), Color(0.2, 0.73, 0.72), 2.0, 7.5, true)
 		flicker_lights.append([bay_light, 0.42, float(i) * 1.2 + 1.0])
 
+	_build_industrial_pipe_prop()
+
 	# Overhead lamps alternate cold white and drowned amber; their irregular flicker is intentional.
 	for i in range(10):
 		var zlamp = 8.0 - float(i) * 7.6
@@ -203,6 +206,31 @@ func _build_world():
 	_box(self, "Exit light left", Vector3(-3.65, 4.35, -62.68), Vector3(0.22, 0.12, 0.42), _emissive(Color(0.76, 0.10, 0.055), 0.75), false)
 	_box(self, "Exit light right", Vector3(3.65, 4.35, -62.68), Vector3(0.22, 0.12, 0.42), _emissive(Color(0.76, 0.10, 0.055), 0.75), false)
 	_omni(Vector3(0, 3.8, -60.2), Color(0.72, 0.12, 0.075), 0.65, 7.0, false)
+
+func _build_industrial_pipe_prop():
+	var packed = load("res://assets/third_party/polyhaven/modular_industrial_pipes_01/modular_industrial_pipes_01_1k.gltf") as PackedScene
+	if packed == null:
+		push_error("Could not load the licensed Poly Haven modular pipe asset.")
+		return
+	industrial_pipe_prop = Node3D.new()
+	industrial_pipe_prop.name = "ModularIndustrialPipes_CC0"
+	industrial_pipe_prop.position = Vector3(6.85, 0.75, -23.0)
+	industrial_pipe_prop.scale = Vector3.ONE * 0.75
+	industrial_pipe_prop.rotation.y = PI * 0.5
+	add_child(industrial_pipe_prop)
+	var visual = packed.instantiate()
+	visual.name = "Poly Haven glTF"
+	industrial_pipe_prop.add_child(visual)
+	var body = StaticBody3D.new()
+	body.name = "PipeAssemblyCollision"
+	body.position = Vector3(0, 0.25, 0)
+	var collision = CollisionShape3D.new()
+	collision.name = "CollisionShape3D"
+	var shape = BoxShape3D.new()
+	shape.size = Vector3(2.05, 2.0, 0.62)
+	collision.shape = shape
+	body.add_child(collision)
+	industrial_pipe_prop.add_child(body)
 
 func _build_station(pos, index):
 	var station = Node3D.new()
