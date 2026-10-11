@@ -166,6 +166,7 @@ Keep the latest entry at the bottom. Each scheduled run must read this history b
 |---|---|---|---|---|
 | 2026-10-10 | Added mobile virtual stick, touch-look, action/toggle buttons, restart UI, touch tests, and safe-area layout. | Godot 4.7.2 editor import; gameplay smoke test; rendered preview. | `3101175` | Asset/art-direction audit and a first license-cleared PBR/industrial asset import. |
 | 2026-10-11 | Imported Poly Haven Modular Industrial Pipes 01 at 1K and integrated the CC0 assembly, collision proxy, and source manifest in the second bay. | Godot 4.7.2 editor import; mobile/gameplay smoke test with 8-mesh/PBR/collision assertions; Xvfb capture inspected; `git diff --check`. | `5819755` | Trial 1K Concrete Wall 003 on one contained wall section; compare it with the procedural concrete before broader use. |
+| 2026-10-12 | Trialed Poly Haven Concrete Wall 003’s 1K diffuse, OpenGL normal, roughness, and AO maps on one bay back wall; kept two other bays procedural and darkened albedo after the first preview. | Baseline and post-change Godot 4.7.2 editor import; gameplay/material smoke; Xvfb 1600×900 preview captured and inspected; all four file checksums/byte counts verified; `git diff --check`. | `7442ce0` | Add deterministic Listener last-echo target/retarget tests, then fix one pursuit edge case without changing the signature mechanic. |
 
 ## References
 
