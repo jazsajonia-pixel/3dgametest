@@ -1,6 +1,6 @@
 # THE HUM: Archive of the Drowned
 
-A first-person 3D horror prototype built for **Godot 4.7.2**. Explore a submerged acoustic archive, recover three fragments visible only in a short-lived listening pulse, and escape before the Listener reaches the last place you called from.
+A first-person horror vertical slice built with **Godot 4.7.2**. Explore a submerged acoustic archive, use short-lived listening pulses to reveal three memory fragments, and escape before the Listener reaches the last place you called from.
 
 ![In-engine Godot 4.7.2 preview of the flooded archive corridor](screenshots/archive-preview.png)
 
