@@ -23,6 +23,28 @@ func _assert_imported_pipe_asset(game):
     assert(collision.shape is BoxShape3D)
     assert(collision.shape.size.is_equal_approx(Vector3(2.05, 2.0, 0.62)))
 
+func _assert_concrete_wall_trial(game):
+    var body = game.concrete_trial_wall
+    assert(body != null)
+    assert(body.name == "Concrete Wall 003 trial collision")
+    var wall = body.get_node("Concrete Wall 003 trial") as MeshInstance3D
+    assert(wall != null)
+    var material = wall.material_override as StandardMaterial3D
+    assert(material != null)
+    assert(material.albedo_texture != null)
+    assert(material.normal_enabled and material.normal_texture != null)
+    assert(material.roughness_texture != null)
+    assert(material.ao_enabled and material.ao_texture != null)
+    assert(material.uv1_scale.is_equal_approx(Vector3(2.0, 2.0, 2.0)))
+    var shape = body.get_node("CollisionShape3D").shape as BoxShape3D
+    assert(shape.size.is_equal_approx(Vector3(0.26, 4.3, 8.0)))
+    assert(game.bay_back_walls.size() == 3)
+    assert(game.bay_back_walls[1] == body)
+    for wall_index in [0, 2]:
+        var procedural_body = game.bay_back_walls[wall_index]
+        var procedural_wall = procedural_body.get_node("Bay back") as MeshInstance3D
+        assert(procedural_wall.material_override is ShaderMaterial)
+
 func _run_checks():
     var game = load("res://scenes/main.tscn").instantiate()
     root.add_child(game)
@@ -34,6 +56,7 @@ func _run_checks():
     assert(game.pulse_charges == 3)
     assert(not game.flashlight.visible)
     _assert_imported_pipe_asset(game)
+    _assert_concrete_wall_trial(game)
     assert(game.mobile_action_buttons.size() == 5)
     var stick_center = game.mobile_stick_base.global_position + game.mobile_stick_base.size * 0.5
     var touch_down = InputEventScreenTouch.new()
@@ -117,7 +140,7 @@ func _run_checks():
     assert(game.enemy.get_meta("arms").size() == 2)
     game._finish(false)
     assert(game.mobile_action_buttons.has("PLAY AGAIN"))
-    print("PASS: mobile stick/look, action buttons, restart UI, echo, recharge, shards, exit, and creature animation.")
+    print("PASS: mobile controls, echo/recharge/shards/exit, creature animation, pipe asset, and isolated four-map concrete PBR trial.")
     game.ambient_player.stop()
     game.pulse_player.stop()
     game.heart_player.stop()

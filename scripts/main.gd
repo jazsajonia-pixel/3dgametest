@@ -20,6 +20,8 @@ var enemy_core = null
 var enemy_eyes = []
 var exit_door = null
 var industrial_pipe_prop = null
+var concrete_trial_wall = null
+var bay_back_walls = []
 var ui_status = null
 var ui_objective = null
 var ui_hint = null
@@ -119,6 +121,7 @@ func _build_world():
 	# A single long, flooded concrete service hall, with inset listening alcoves.
 	var concrete = _mat(Color(0.105, 0.145, 0.155), 0.18, 0.78)
 	var wall_mat = _concrete_material(Color(0.105, 0.135, 0.145), Vector2(18, 18), 0.08, 0.88)
+	var concrete_wall_003 = _concrete_wall_003_material()
 	var ceiling_mat = _concrete_material(Color(0.055, 0.074, 0.081), Vector2(22, 15), 0.06, 0.91)
 	var steel = _mat(Color(0.105, 0.15, 0.16), 0.72, 0.34)
 	var trim = _mat(Color(0.12, 0.37, 0.38), 0.68, 0.24, Color(0.025, 0.11, 0.11))
@@ -160,7 +163,15 @@ func _build_world():
 		var side = -1.0 if i % 2 == 0 else 1.0
 		var center_x = side * 6.35
 		_box(self, "Bay floor", Vector3(center_x, -0.29, bz), Vector3(3.2, 0.58, 8.0), concrete, true)
-		_box(self, "Bay back", Vector3(center_x + side * 1.52, 2.15, bz), Vector3(0.26, 4.3, 8.0), wall_mat, true)
+		var bay_back_material = wall_mat
+		var bay_back_label = "Bay back"
+		if i == 1:
+			bay_back_material = concrete_wall_003
+			bay_back_label = "Concrete Wall 003 trial"
+		var back_wall = _box(self, bay_back_label, Vector3(center_x + side * 1.52, 2.15, bz), Vector3(0.26, 4.3, 8.0), bay_back_material, true)
+		bay_back_walls.append(back_wall)
+		if i == 1:
+			concrete_trial_wall = back_wall
 		_box(self, "Bay side wall", Vector3(side * 6.35, 2.05, bz - 3.9), Vector3(3.2, 4.1, 0.22), wall_mat, true)
 		_box(self, "Bay side wall", Vector3(side * 6.35, 2.05, bz + 3.9), Vector3(3.2, 4.1, 0.22), wall_mat, true)
 		_box(self, "Bay lintel", Vector3(side * 4.95, 4.12, bz), Vector3(0.28, 0.34, 2.55), steel, false)
@@ -917,6 +928,29 @@ void fragment() {
 	material.set_shader_parameter("tile_scale", tiling)
 	material.set_shader_parameter("base_metalness", metalness)
 	material.set_shader_parameter("base_roughness", roughness)
+	return material
+
+func _concrete_wall_003_material():
+	var albedo = load("res://assets/third_party/polyhaven/concrete_wall_003_1k/textures/concrete_wall_003_diff_1k.jpg")
+	var normal = load("res://assets/third_party/polyhaven/concrete_wall_003_1k/textures/concrete_wall_003_nor_gl_1k.jpg")
+	var roughness_map = load("res://assets/third_party/polyhaven/concrete_wall_003_1k/textures/concrete_wall_003_rough_1k.jpg")
+	var ao = load("res://assets/third_party/polyhaven/concrete_wall_003_1k/textures/concrete_wall_003_ao_1k.jpg")
+	if albedo == null or normal == null or roughness_map == null or ao == null:
+		push_error("Concrete Wall 003 trial maps could not be loaded.")
+		return null
+	var material = StandardMaterial3D.new()
+	material.albedo_texture = albedo
+	material.albedo_color = Color(0.42, 0.46, 0.43)
+	material.metallic = 0.0
+	material.roughness = 0.92
+	material.roughness_texture = roughness_map
+	material.normal_enabled = true
+	material.normal_texture = normal
+	material.normal_scale = 0.72
+	material.ao_enabled = true
+	material.ao_texture = ao
+	material.ao_light_affect = 0.55
+	material.uv1_scale = Vector3(2.0, 2.0, 2.0)
 	return material
 
 func _mat(color, metallic, roughness, emission = Color(0, 0, 0)):
