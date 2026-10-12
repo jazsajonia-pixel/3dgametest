@@ -45,6 +45,66 @@ func _assert_concrete_wall_trial(game):
         var procedural_wall = procedural_body.get_node("Bay back") as MeshInstance3D
         assert(procedural_wall.material_override is ShaderMaterial)
 
+func _assert_listener_echo_and_recoil(game):
+    var original_player_position = game.player.global_position
+    var original_enemy_position = game.enemy.global_position
+    var original_camera_rotation = game.camera.rotation
+
+    var first_echo_position = Vector3(-1.2, 0.92, -12.0)
+    game.player.global_position = first_echo_position
+    game._emit_echo()
+    assert(game.enemy_awake)
+    assert(game.enemy_target.is_equal_approx(first_echo_position))
+
+    var second_echo_position = Vector3(1.4, 0.92, -21.0)
+    game.pulse_cooldown = 0.0
+    game.player.global_position = second_echo_position
+    game._emit_echo()
+    assert(game.enemy_target.is_equal_approx(second_echo_position))
+
+    # A delayed physics frame may reach the lure, but the Listener must not
+    # cross past it. Move the player away so arrival itself is not an attack.
+    game.enemy.global_position = Vector3(0.0, 0.0, -53.0)
+    game.player.global_position = second_echo_position + Vector3(5.0, 0.0, 0.0)
+    game._update_enemy(100.0)
+    var horizontal_target_offset = Vector2(game.enemy.global_position.x - second_echo_position.x, game.enemy.global_position.z - second_echo_position.z)
+    assert(horizontal_target_offset.length() < 0.001)
+    assert(not game.caught)
+
+    for ring in game.echo_rings:
+        ring["node"].queue_free()
+    game.echo_rings.clear()
+    game.pulse_player.stop()
+    game.pulse_charges = game.MAX_ECHOES
+    game.pulse_cooldown = 0.0
+    game.echo_timer = 0.0
+    game.enemy_awake = false
+    game.enemy_target = Vector3.ZERO
+    game.player.global_position = original_player_position
+
+    # When the Listener reaches the last echo while the player keeps the beam
+    # trained on it, it must recoil instead of freezing at the lure and catching.
+    game.player.global_position = Vector3(0.0, 0.92, -30.0)
+    game.enemy.global_position = Vector3(0.0, 0.0, -30.2)
+    game.enemy_target = game.enemy.global_position
+    game.enemy_awake = true
+    game.torch_on = true
+    game.flashlight.visible = true
+    game.camera.look_at(game.enemy_core.global_position, Vector3.UP)
+    var distance_before_recoil = game.player.global_position.distance_to(game.enemy.global_position)
+    game._update_enemy(0.1)
+    assert(game.enemy_recoiling)
+    assert(not game.caught)
+    assert(game.enemy.global_position.distance_to(game.player.global_position) > distance_before_recoil)
+
+    game.torch_on = false
+    game.flashlight.visible = false
+    game.enemy_awake = false
+    game.enemy.global_position = original_enemy_position
+    game.enemy_target = Vector3.ZERO
+    game.player.global_position = original_player_position
+    game.camera.rotation = original_camera_rotation
+
 func _run_checks():
     var game = load("res://scenes/main.tscn").instantiate()
     root.add_child(game)
@@ -57,6 +117,7 @@ func _run_checks():
     assert(not game.flashlight.visible)
     _assert_imported_pipe_asset(game)
     _assert_concrete_wall_trial(game)
+    _assert_listener_echo_and_recoil(game)
     assert(game.mobile_action_buttons.size() == 5)
     var stick_center = game.mobile_stick_base.global_position + game.mobile_stick_base.size * 0.5
     var touch_down = InputEventScreenTouch.new()
@@ -108,6 +169,7 @@ func _run_checks():
     assert(game.pulse_charges == 2)
     assert(game.echo_timer > 4.9)
     assert(game.enemy_awake)
+    assert(game.enemy_target.is_equal_approx(game.player.global_position))
     assert(game.echo_rings.size() == 1)
     game._process(0.05)
     assert(game.shards[0]["node"].visible)
@@ -140,7 +202,7 @@ func _run_checks():
     assert(game.enemy.get_meta("arms").size() == 2)
     game._finish(false)
     assert(game.mobile_action_buttons.has("PLAY AGAIN"))
-    print("PASS: mobile controls, echo/recharge/shards/exit, creature animation, pipe asset, and isolated four-map concrete PBR trial.")
+    print("PASS: mobile controls, echo target capture/retarget, close-range Listener recoil, progression, creature animation, and licensed assets.")
     game.ambient_player.stop()
     game.pulse_player.stop()
     game.heart_player.stop()

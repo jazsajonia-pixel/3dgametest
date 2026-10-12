@@ -40,6 +40,7 @@ var battery = 100.0
 var torch_on = false
 var crouching = false
 var enemy_awake = false
+var enemy_recoiling = false
 var enemy_target = Vector3(0, 0, 0)
 var enemy_speed = 1.15
 var message_timer = 0.0
@@ -735,24 +736,34 @@ func _check_safe_stations(delta):
 			station_data["light"].light_energy = 0.3 + 0.08 * sin(clock * 1.8 + float(station_data["index"]))
 
 func _update_enemy(delta):
-	if enemy == null or not enemy_awake:
+	if enemy == null:
+		return
+	enemy_recoiling = false
+	if not enemy_awake:
 		return
 	var epos = enemy.global_position
 	var ppos = player.global_position
 	var delta_to_target = enemy_target - epos
 	delta_to_target.y = 0.0
-	var direction = delta_to_target.normalized()
-	if delta_to_target.length() > 0.38:
-		var forward = -camera.global_transform.basis.z
-		var to_enemy = (epos - ppos).normalized()
-		var lit = torch_on and forward.dot(to_enemy) > 0.62 and ppos.distance_to(epos) < 14.0
-		var pace = enemy_speed * (1.65 if lit else 1.0)
-		var step = min(delta_to_target.length(), pace * delta)
-		var away = -direction if lit else direction
-		enemy.global_translate(away * step)
+	var target_distance = delta_to_target.length()
+	var beam_to_core = enemy_core.global_position - camera.global_position
+	var lit = torch_on and camera.global_transform.basis.z.dot(beam_to_core.normalized()) < -0.62 and beam_to_core.length() < 14.0
+	if lit:
+		enemy_recoiling = true
+		# Recoil must still run after the Listener reaches the echo origin. Use the
+		# player's horizontal position rather than a zero-length target direction.
+		var away_from_player = Vector3(epos.x - ppos.x, 0.0, epos.z - ppos.z)
+		if away_from_player.length_squared() < 0.0001:
+			var right = player.global_transform.basis.x
+			away_from_player = Vector3(right.x, 0.0, right.z)
+		enemy.global_translate(away_from_player.normalized() * enemy_speed * 1.65 * delta)
+		enemy.look_at(camera.global_position, Vector3.UP)
+	elif target_distance > 0.38:
+		var step = min(target_distance, enemy_speed * delta)
+		enemy.global_translate(delta_to_target.normalized() * step)
 		enemy.look_at(Vector3(enemy_target.x, epos.y + 0.5, enemy_target.z), Vector3.UP)
 	# It attacks only when it reaches the listener's body: crouching alone won't save you.
-	if ppos.distance_to(epos + Vector3(0, 1.0, 0)) < 1.28:
+	if not lit and ppos.distance_to(epos + Vector3(0, 1.0, 0)) < 1.28:
 		caught = true
 		_finish(false)
 
@@ -762,7 +773,7 @@ func _update_enemy_visuals(delta):
 	var arms = enemy.get_meta("arms")
 	var legs = enemy.get_meta("legs")
 	var head = enemy.get_meta("head")
-	var moving = enemy_awake and enemy_target.distance_to(enemy.global_position) > 0.4
+	var moving = enemy_awake and (enemy_recoiling or enemy_target.distance_to(enemy.global_position) > 0.4)
 	var rate = clock * (9.0 if moving else 2.1)
 	arms[0].rotation.x = sin(rate) * (0.26 if moving else 0.055)
 	arms[1].rotation.x = -sin(rate) * (0.26 if moving else 0.055)
