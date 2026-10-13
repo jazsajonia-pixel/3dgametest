@@ -13,6 +13,7 @@ Most horror games make noise a passive penalty. Here, **Q sends a deliberate ech
 - First-person mouse-look, walking, running, crouching, head-bob and subtle FOV shift.
 - Procedural 3D corridor architecture, wet reflective floor accents, service bays, conduits, warning details, fog, filmic tonemapping, emissive lamps and shadow-casting lights, with a CC0 textured industrial pipe assembly and a single-wall 1K concrete material trial.
 - A hand-assembled articulated creature with breathing, head-tilt, limb-swing and pulse-reveal animation.
+- Original spatialized concrete thuds and puddle splashes. When the Listener is awake it hears nearby footfalls: sprinting and wet patches carry farther, while crouching slows and muffles steps.
 - Mobile-first touchscreen HUD: a left analog stick, right-side touch-look, ECHO/LAMP/USE actions, latched RUN/CROUCH toggles, and a touch-friendly restart button. Keyboard and mouse remain available for desktop testing.
 - Echo rings, timed shard visibility, three collectible memory fragments, a locked exit, safe recharge plinths, flashlight battery, and caught/win states.
 - Most level geometry, creature parts, lighting, HUD treatment and animations are created at runtime in GDScript. The imported Poly Haven pipe assembly and its 1K PBR maps, plus the four 1K Concrete Wall 003 maps, are CC0 and recorded in [`assets/third_party/ASSET_SOURCES.md`](assets/third_party/ASSET_SOURCES.md). The concrete material is applied to only one service-bay back wall; the other bay backs remain procedural for comparison. The ambient drone, echo call, and heartbeat are synthesized locally (`tools/generate_audio.py`); the included DejaVu Sans font is licensed under its bundled license.
@@ -36,9 +37,11 @@ Most horror games make noise a passive penalty. Here, **Q sends a deliberate ech
 
 **Objective:** Find the three memory fragments. They are hidden in the corridor until a pulse reveals them. The resonator plinths restore pulse charges and the lamp cell while you stand nearby. Reach the far bulkhead after collecting all three.
 
+**Acoustic movement:** Footsteps only sound while grounded and moving. Walk quietly on dry concrete; puddles are louder. Sprinting increases step rate and carrying distance, while crouching slows and dampens steps. Once awakened, the Listener can retarget to a footstep it hears—use the left stick to step around puddles or crouch when close.
+
 ## Rebuild the audio
 
-Run `python3 tools/generate_audio.py` from the project root. It regenerates the three small WAV files using only Python standard-library modules.
+Run `python3 tools/generate_audio.py` from the project root. It regenerates the ambient drone, echo, heartbeat, and dry/wet footstep WAVs using only Python standard-library modules.
 
 ## Engine version
 

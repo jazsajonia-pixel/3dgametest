@@ -33,6 +33,7 @@ var shards = []
 var safe_stations = []
 var flicker_lights = []
 var echo_rings = []
+var wet_surface_zones = []
 var pulse_charges = MAX_ECHOES
 var echo_timer = 0.0
 var pulse_cooldown = 0.0
@@ -43,6 +44,8 @@ var enemy_awake = false
 var enemy_recoiling = false
 var enemy_target = Vector3(0, 0, 0)
 var enemy_speed = 1.15
+var footstep_timer = 0.0
+var footstep_alert_timer = 0.0
 var message_timer = 0.0
 var caught = false
 var completed = false
@@ -52,6 +55,9 @@ var clock = 0.0
 var ambient_player = null
 var pulse_player = null
 var heart_player = null
+var footstep_player = null
+var footstep_concrete_stream = null
+var footstep_splash_stream = null
 var exit_warning = 0.0
 var objective_count = 3
 var mobile_stick_base = null
@@ -89,6 +95,15 @@ func _setup_audio():
 	heart_player.stream = load("res://assets/audio/drowned_heartbeat.wav")
 	heart_player.volume_db = -7.0
 	add_child(heart_player)
+	footstep_player = AudioStreamPlayer3D.new()
+	footstep_player.name = "Player footfalls"
+	footstep_concrete_stream = load("res://assets/audio/footstep_concrete.wav")
+	footstep_splash_stream = load("res://assets/audio/footstep_splash.wav")
+	footstep_player.stream = footstep_concrete_stream
+	footstep_player.volume_db = -17.0
+	footstep_player.max_distance = 20.0
+	footstep_player.unit_size = 3.0
+	add_child(footstep_player)
 
 func _setup_environment():
 	var world = WorldEnvironment.new()
@@ -145,8 +160,15 @@ func _build_world():
 		var zpos = -60.0 + float(i) * 4.15
 		var xside = -1.0 if i % 2 == 0 else 1.0
 		var puddle = _mat(Color(0.19, 0.27, 0.26), 0.04, 0.24, Color(0.018, 0.028, 0.026))
-		var patch = _part(self, SphereMesh.new(), Vector3(xside * (1.1 + float(i % 3) * 0.57), 0.025, zpos), puddle)
-		patch.scale = Vector3(0.52 + float(i % 3) * 0.19, 0.012, 0.24 + float(i % 2) * 0.13)
+		var puddle_x = xside * (1.1 + float(i % 3) * 0.57)
+		var puddle_x_scale = 0.52 + float(i % 3) * 0.19
+		var puddle_z_scale = 0.24 + float(i % 2) * 0.13
+		var patch = _part(self, SphereMesh.new(), Vector3(puddle_x, 0.025, zpos), puddle)
+		patch.scale = Vector3(puddle_x_scale, 0.012, puddle_z_scale)
+		wet_surface_zones.append({
+			"center": Vector2(puddle_x, zpos),
+			"radii": Vector2(max(0.42, puddle_x_scale * 0.75), max(0.24, puddle_z_scale * 0.75))
+		})
 
 	# Repeating structural ribs and service conduits.
 	for i in range(11):
@@ -561,6 +583,7 @@ func _touch_over_mobile_button(screen_position):
 
 func _process(delta):
 	clock += delta
+	footstep_alert_timer = max(0.0, footstep_alert_timer - delta)
 	if message_timer > 0.0:
 		message_timer -= delta
 		if message_timer <= 0.0 and ui_message != null:
@@ -635,6 +658,9 @@ func _physics_process(delta):
 	player.move_and_slide()
 	velocity = player.velocity
 	player.set_meta("vertical_speed", velocity.y)
+	var horizontal_speed = Vector2(velocity.x, velocity.z).length()
+	var on_wet_surface = _is_wet_surface(player.global_position)
+	_advance_footsteps(delta, horizontal_speed, player.is_on_floor(), on_wet_surface, crouching, sprinting)
 	var cam_target = 1.08 if crouching else 1.55
 	var speed_factor = min(1.0, wish.length() * (1.45 if sprinting else 0.75))
 	gait_phase += delta * (10.5 if sprinting else 7.1) * speed_factor
@@ -644,6 +670,66 @@ func _physics_process(delta):
 	if sprinting:
 		battery = max(0.0, battery - delta * 0.1)
 	_update_enemy(delta)
+
+func _is_wet_surface(world_position):
+	for zone in wet_surface_zones:
+		var normalized_offset = Vector2(
+			(world_position.x - zone["center"].x) / zone["radii"].x,
+			(world_position.z - zone["center"].y) / zone["radii"].y
+		)
+		if normalized_offset.length_squared() <= 1.0:
+			return true
+	return false
+
+func _footstep_noise_level(is_wet, is_crouching, is_sprinting):
+	var level = 0.22 if not is_wet else 0.58
+	if is_sprinting and not is_crouching:
+		level *= 1.45
+	if is_crouching:
+		level *= 0.42
+	return level
+
+func _footstep_hearing_radius(noise_level):
+	return 4.0 + noise_level * 15.0
+
+func _footstep_volume_db(is_wet, is_crouching, is_sprinting):
+	var noise_level = _footstep_noise_level(is_wet, is_crouching, is_sprinting)
+	return max(-24.0, -9.0 + linear_to_db(noise_level / 0.58))
+
+func _footstep_interval(is_crouching, is_sprinting):
+	if is_crouching:
+		return 0.66
+	return 0.34 if is_sprinting else 0.52
+
+func _advance_footsteps(delta, horizontal_speed, grounded, is_wet, is_crouching, is_sprinting):
+	if not grounded or horizontal_speed < 0.45:
+		footstep_timer = 0.0
+		return false
+	footstep_timer = max(0.0, footstep_timer - delta)
+	if footstep_timer > 0.0:
+		return false
+	_emit_footstep(is_wet, is_crouching, is_sprinting)
+	footstep_timer = _footstep_interval(is_crouching, is_sprinting)
+	return true
+
+func _emit_footstep(is_wet, is_crouching, is_sprinting):
+	var noise_level = _footstep_noise_level(is_wet, is_crouching, is_sprinting)
+	if footstep_player != null:
+		footstep_player.global_position = player.global_position
+		footstep_player.stream = footstep_splash_stream if is_wet else footstep_concrete_stream
+		footstep_player.volume_db = _footstep_volume_db(is_wet, is_crouching, is_sprinting)
+		footstep_player.pitch_scale = 0.96 if is_wet else 1.0
+		footstep_player.play()
+	if not enemy_awake:
+		return false
+	var horizontal_distance = Vector2(player.global_position.x - enemy.global_position.x, player.global_position.z - enemy.global_position.z).length()
+	if horizontal_distance > _footstep_hearing_radius(noise_level):
+		return false
+	enemy_target = player.global_position
+	if footstep_alert_timer <= 0.0:
+		_set_message("THE WATER CARRIES YOUR FOOTSTEPS." if is_wet else "THE LISTENER HEARD YOUR FOOTSTEPS.", 1.8)
+		footstep_alert_timer = 2.4
+	return true
 
 func _input(event):
 	if event is InputEventScreenTouch or event is InputEventScreenDrag:
@@ -761,7 +847,12 @@ func _update_enemy(delta):
 	elif target_distance > 0.38:
 		var step = min(target_distance, enemy_speed * delta)
 		enemy.global_translate(delta_to_target.normalized() * step)
-		enemy.look_at(Vector3(enemy_target.x, epos.y + 0.5, enemy_target.z), Vector3.UP)
+		var facing_target = Vector3(enemy_target.x, epos.y + 0.5, enemy_target.z)
+		var horizontal_facing = Vector2(facing_target.x - enemy.global_position.x, facing_target.z - enemy.global_position.z)
+		if horizontal_facing.length_squared() < 0.0001:
+			var approach = Vector2(delta_to_target.x, delta_to_target.z).normalized()
+			facing_target = enemy.global_position + Vector3(approach.x, 0.5, approach.y)
+		enemy.look_at(facing_target, Vector3.UP)
 	# It attacks only when it reaches the listener's body: crouching alone won't save you.
 	if not lit and ppos.distance_to(epos + Vector3(0, 1.0, 0)) < 1.28:
 		caught = true

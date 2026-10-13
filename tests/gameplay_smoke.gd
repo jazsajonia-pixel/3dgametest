@@ -105,6 +105,64 @@ func _assert_listener_echo_and_recoil(game):
     game.player.global_position = original_player_position
     game.camera.rotation = original_camera_rotation
 
+func _assert_surface_footsteps(game):
+    assert(game.wet_surface_zones.size() == 18)
+    var first_wet_center = game.wet_surface_zones[0]["center"]
+    assert(game._is_wet_surface(Vector3(first_wet_center.x, 0.0, first_wet_center.y)))
+    assert(not game._is_wet_surface(Vector3(0.0, 0.0, 10.0)))
+
+    var dry_walk = game._footstep_noise_level(false, false, false)
+    var wet_walk = game._footstep_noise_level(true, false, false)
+    var crouched_wet = game._footstep_noise_level(true, true, false)
+    var wet_sprint = game._footstep_noise_level(true, false, true)
+    assert(wet_walk > dry_walk)
+    assert(crouched_wet < wet_walk)
+    assert(wet_sprint > wet_walk)
+    assert(game._footstep_volume_db(true, false, false) > game._footstep_volume_db(false, false, false))
+    assert(game._footstep_volume_db(true, true, false) < game._footstep_volume_db(true, false, false))
+    assert(game._footstep_volume_db(true, false, true) > game._footstep_volume_db(true, false, false))
+    assert(game._footstep_interval(true, false) > game._footstep_interval(false, false))
+    assert(game._footstep_interval(false, true) < game._footstep_interval(false, false))
+    assert(game.footstep_concrete_stream != null)
+    assert(game.footstep_splash_stream != null)
+
+    game.enemy_awake = false
+    game.footstep_timer = 0.0
+    assert(game._advance_footsteps(0.016, 3.1, true, false, false, false))
+    assert(not game._advance_footsteps(0.10, 3.1, true, false, false, false))
+    assert(game._advance_footsteps(0.43, 3.1, true, false, false, false))
+    assert(not game._advance_footsteps(0.1, 0.0, true, false, false, false))
+    assert(not game._advance_footsteps(0.1, 3.1, false, false, false, false))
+    game.footstep_player.stop()
+
+    var original_player_position = game.player.global_position
+    var original_enemy_position = game.enemy.global_position
+    var original_enemy_target = game.enemy_target
+    game.player.global_position = Vector3(0.0, 0.92, -30.0)
+    game.enemy.global_position = Vector3(0.0, 0.0, -40.0)
+    game.enemy_awake = true
+    game.enemy_target = Vector3(99.0, 0.0, 99.0)
+    var dry_step_was_heard = game._emit_footstep(false, false, false)
+    assert(not dry_step_was_heard)
+    assert(game.enemy_target == Vector3(99.0, 0.0, 99.0))
+    var wet_step_was_heard = game._emit_footstep(true, false, false)
+    assert(wet_step_was_heard)
+    assert(game.enemy_target.is_equal_approx(game.player.global_position))
+
+    game.enemy.global_position = Vector3(0.0, 0.0, -37.0)
+    game.enemy_target = Vector3(99.0, 0.0, 99.0)
+    assert(not game._emit_footstep(false, true, false))
+    assert(game._emit_footstep(true, true, false))
+    assert(game.enemy_target.is_equal_approx(game.player.global_position))
+
+    game.footstep_player.stop()
+    game.enemy_awake = false
+    game.enemy.global_position = original_enemy_position
+    game.enemy_target = original_enemy_target
+    game.player.global_position = original_player_position
+    game.footstep_timer = 0.0
+    game.footstep_alert_timer = 0.0
+
 func _run_checks():
     var game = load("res://scenes/main.tscn").instantiate()
     root.add_child(game)
@@ -118,6 +176,7 @@ func _run_checks():
     _assert_imported_pipe_asset(game)
     _assert_concrete_wall_trial(game)
     _assert_listener_echo_and_recoil(game)
+    _assert_surface_footsteps(game)
     assert(game.mobile_action_buttons.size() == 5)
     var stick_center = game.mobile_stick_base.global_position + game.mobile_stick_base.size * 0.5
     var touch_down = InputEventScreenTouch.new()
@@ -202,13 +261,17 @@ func _run_checks():
     assert(game.enemy.get_meta("arms").size() == 2)
     game._finish(false)
     assert(game.mobile_action_buttons.has("PLAY AGAIN"))
-    print("PASS: mobile controls, echo target capture/retarget, close-range Listener recoil, progression, creature animation, and licensed assets.")
+    print("PASS: mobile controls, echo/pursuit, surface footsteps and noise, progression, creature animation, and licensed assets.")
     game.ambient_player.stop()
     game.pulse_player.stop()
     game.heart_player.stop()
+    game.footstep_player.stop()
     game.ambient_player.stream = null
     game.pulse_player.stream = null
     game.heart_player.stream = null
+    game.footstep_player.stream = null
+    game.footstep_concrete_stream = null
+    game.footstep_splash_stream = null
     await create_timer(0.35).timeout
     floor_box = null
     station = null

@@ -82,9 +82,37 @@ def heartbeat():
     save("drowned_heartbeat.wav", samples)
 
 
+def footstep(is_wet):
+    seconds = 0.23 if is_wet else 0.18
+    count = int(seconds * RATE)
+    rng = random.Random(731 if is_wet else 419)
+    samples = []
+    low = 0.0
+    mid = 0.0
+    for i in range(count):
+        t = i / RATE
+        x = t / seconds
+        envelope = (1.0 - x) ** (3.0 if is_wet else 4.5)
+        noise = rng.uniform(-1.0, 1.0)
+        low += (noise - low) * 0.035
+        mid += (noise - mid) * 0.24
+        thump = 0.62 * math.sin(2 * math.pi * (72.0 if not is_wet else 58.0) * t) * math.exp(-t * 22.0)
+        heel = 0.24 * math.sin(2 * math.pi * 116.0 * t) * math.exp(-t * 35.0)
+        if is_wet:
+            texture = noise * 0.19 + mid * 0.16 + low * 0.07
+            slap = 0.23 * math.sin(2 * math.pi * (390.0 - 220.0 * x) * t) * math.exp(-t * 13.0)
+        else:
+            texture = noise * 0.055 + mid * 0.045 + low * 0.11
+            slap = 0.0
+        samples.append((thump + heel + texture + slap) * envelope)
+    save("footstep_splash.wav" if is_wet else "footstep_concrete.wav", samples)
+
+
 if __name__ == "__main__":
     ambient()
     pulse()
     heartbeat()
+    footstep(False)
+    footstep(True)
     for path in sorted(OUT.glob("*.wav")):
         print(f"Generated {path.relative_to(ROOT)} ({path.stat().st_size:,} bytes)")
