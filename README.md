@@ -4,6 +4,8 @@ A first-person horror vertical slice built with **Godot 4.7.2**. Explore a subme
 
 ![In-engine Godot 4.7.2 preview of the flooded archive corridor](screenshots/archive-preview.png)
 
+![In-engine opening prompt showing the safe movement tutorial before the Listener wakes](screenshots/onboarding-preview.png)
+
 ## The mechanic: sound is a breadcrumb you choose to leave
 
 Most horror games make noise a passive penalty. Here, **Q sends a deliberate echolocation pulse**: it exposes nearby memory fragments and the Listener for a few seconds, but also gives the creature your exact pulse origin as its next destination. You decide when information is worth the risk. The creature hunts the *last echo*, not your live position, so you can use a pulse to misdirect it, then move quietly while it investigates. The flashlight can force it to recoil if you keep the beam trained on it, but it burns through its finite cell and announces where you are. Three resonator plinths recharge both resources.
@@ -14,6 +16,7 @@ Most horror games make noise a passive penalty. Here, **Q sends a deliberate ech
 - Procedural 3D corridor architecture, wet reflective floor accents, service bays, conduits, warning details, fog, filmic tonemapping, emissive lamps and shadow-casting lights, with a CC0 textured industrial pipe assembly and a single-wall 1K concrete material trial.
 - A hand-assembled articulated creature with breathing, head-tilt, limb-swing and pulse-reveal animation.
 - Original spatialized concrete thuds and puddle splashes. When the Listener is awake it hears nearby footfalls: sprinting and wet patches carry farther, while crouching slows and muffles steps.
+- A non-hostile opening lesson uses the real start-area puddle to demonstrate quiet dry steps, louder standing splashes, and crouch counterplay before the first echo wakes the Listener.
 - Mobile-first touchscreen HUD: a left analog stick, right-side touch-look, ECHO/LAMP/USE actions, latched RUN/CROUCH toggles, and a touch-friendly restart button. Keyboard and mouse remain available for desktop testing.
 - Echo rings, timed shard visibility, three collectible memory fragments, a locked exit, safe recharge plinths, flashlight battery, and caught/win states.
 - Most level geometry, creature parts, lighting, HUD treatment and animations are created at runtime in GDScript. The imported Poly Haven pipe assembly and its 1K PBR maps, plus the four 1K Concrete Wall 003 maps, are CC0 and recorded in [`assets/third_party/ASSET_SOURCES.md`](assets/third_party/ASSET_SOURCES.md). The concrete material is applied to only one service-bay back wall; the other bay backs remain procedural for comparison. The ambient drone, echo call, and heartbeat are synthesized locally (`tools/generate_audio.py`); the included DejaVu Sans font is licensed under its bundled license.
@@ -37,7 +40,7 @@ Most horror games make noise a passive penalty. Here, **Q sends a deliberate ech
 
 **Objective:** Find the three memory fragments. They are hidden in the corridor until a pulse reveals them. The resonator plinths restore pulse charges and the lamp cell while you stand nearby. Reach the far bulkhead after collecting all three.
 
-**Acoustic movement:** Footsteps only sound while grounded and moving. Walk quietly on dry concrete; puddles are louder. Sprinting increases step rate and carrying distance, while crouching slows and dampens steps. Once awakened, the Listener can retarget to a footstep it hears—use the left stick to step around puddles or crouch when close.
+**Acoustic movement:** The Listener is dormant at the beginning. Follow the brief opening prompts: take a dry step, compare it with the reflective puddle to your right, then crouch to hear how wet steps soften. Footsteps only sound while grounded and moving. Sprinting increases step rate and carrying distance; crouching slows and dampens steps. After your first ECHO wakes the Listener, nearby audible steps can retarget it—use the left stick to avoid puddles or crouch when close.
 
 ## Rebuild the audio
 

@@ -163,6 +163,41 @@ func _assert_surface_footsteps(game):
     game.footstep_timer = 0.0
     game.footstep_alert_timer = 0.0
 
+func _assert_movement_onboarding(game):
+    assert(not game.enemy_awake)
+    assert(not game.tutorial_dry_step_seen)
+    assert(not game.tutorial_wet_walk_seen)
+    assert(not game.tutorial_wet_crouch_seen)
+    assert(not game.movement_tutorial_complete)
+    assert(game._advance_footsteps(0.016, 3.1, true, false, false, false))
+    assert(game.tutorial_dry_step_seen)
+    assert(game.ui_message.text.contains("DRY CONCRETE"))
+    assert(not game._advance_footsteps(0.10, 3.1, true, false, false, false))
+    assert(game._advance_footsteps(0.53, 3.1, true, true, false, false))
+    assert(game.tutorial_wet_walk_seen)
+    assert(game.ui_message.text.contains("PUDDLE"))
+    assert(not game.movement_tutorial_complete)
+    assert(game._advance_footsteps(0.53, 1.55, true, true, true, false))
+    assert(game.tutorial_wet_crouch_seen)
+    assert(game.movement_tutorial_complete)
+    assert(game.ui_message.text.contains("LESSON COMPLETE"))
+    assert(not game.enemy_awake)
+    assert(not game._advance_footstep_tutorial(true, true))
+
+    game.tutorial_dry_step_seen = false
+    game.tutorial_wet_walk_seen = false
+    game.tutorial_wet_crouch_seen = false
+    game.movement_tutorial_complete = false
+    game.footstep_timer = 0.0
+    assert(game._advance_footsteps(0.016, 1.55, true, true, true, false))
+    assert(game.ui_message.text.contains("CROUCH"))
+    assert(not game.movement_tutorial_complete)
+    game.footstep_timer = 0.0
+    assert(game._advance_footsteps(0.016, 3.1, true, true, false, false))
+    assert(game.movement_tutorial_complete)
+    assert(game.ui_message.text.contains("LESSON COMPLETE"))
+    game.footstep_player.stop()
+
 func _run_checks():
     var game = load("res://scenes/main.tscn").instantiate()
     root.add_child(game)
@@ -173,9 +208,12 @@ func _run_checks():
     assert(game.shards.size() == 3)
     assert(game.pulse_charges == 3)
     assert(not game.flashlight.visible)
+    assert(game.ui_message.visible)
+    assert(game.ui_message.text.contains("DORMANT"))
     _assert_imported_pipe_asset(game)
     _assert_concrete_wall_trial(game)
     _assert_listener_echo_and_recoil(game)
+    _assert_movement_onboarding(game)
     _assert_surface_footsteps(game)
     assert(game.mobile_action_buttons.size() == 5)
     var stick_center = game.mobile_stick_base.global_position + game.mobile_stick_base.size * 0.5
@@ -229,6 +267,7 @@ func _run_checks():
     assert(game.echo_timer > 4.9)
     assert(game.enemy_awake)
     assert(game.enemy_target.is_equal_approx(game.player.global_position))
+    assert(game.ui_message.text.contains("loud footsteps"))
     assert(game.echo_rings.size() == 1)
     game._process(0.05)
     assert(game.shards[0]["node"].visible)
@@ -261,7 +300,7 @@ func _run_checks():
     assert(game.enemy.get_meta("arms").size() == 2)
     game._finish(false)
     assert(game.mobile_action_buttons.has("PLAY AGAIN"))
-    print("PASS: mobile controls, echo/pursuit, surface footsteps and noise, progression, creature animation, and licensed assets.")
+    print("PASS: mobile controls, echo/pursuit, surface footsteps and noise, movement onboarding, progression, creature animation, and licensed assets.")
     game.ambient_player.stop()
     game.pulse_player.stop()
     game.heart_player.stop()

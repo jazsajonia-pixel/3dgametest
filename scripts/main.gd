@@ -46,6 +46,10 @@ var enemy_target = Vector3(0, 0, 0)
 var enemy_speed = 1.15
 var footstep_timer = 0.0
 var footstep_alert_timer = 0.0
+var tutorial_dry_step_seen = false
+var tutorial_wet_walk_seen = false
+var tutorial_wet_crouch_seen = false
+var movement_tutorial_complete = false
 var message_timer = 0.0
 var caught = false
 var completed = false
@@ -77,7 +81,7 @@ func _ready():
 	_build_pickups()
 	_build_hud()
 	_setup_audio()
-	_set_message("THE ARCHIVE IS LISTENING. Move quietly.", 5.0)
+	_set_message("THE LISTENER IS DORMANT. Walk dry concrete; test the puddle on your right.", 6.0)
 	Input.mouse_mode = Input.MOUSE_MODE_CAPTURED
 
 func _setup_audio():
@@ -720,16 +724,42 @@ func _emit_footstep(is_wet, is_crouching, is_sprinting):
 		footstep_player.volume_db = _footstep_volume_db(is_wet, is_crouching, is_sprinting)
 		footstep_player.pitch_scale = 0.96 if is_wet else 1.0
 		footstep_player.play()
+	var tutorial_hint_shown = _advance_footstep_tutorial(is_wet, is_crouching)
 	if not enemy_awake:
 		return false
 	var horizontal_distance = Vector2(player.global_position.x - enemy.global_position.x, player.global_position.z - enemy.global_position.z).length()
 	if horizontal_distance > _footstep_hearing_radius(noise_level):
 		return false
 	enemy_target = player.global_position
-	if footstep_alert_timer <= 0.0:
+	if footstep_alert_timer <= 0.0 and not tutorial_hint_shown:
 		_set_message("THE WATER CARRIES YOUR FOOTSTEPS." if is_wet else "THE LISTENER HEARD YOUR FOOTSTEPS.", 1.8)
 		footstep_alert_timer = 2.4
 	return true
+
+func _advance_footstep_tutorial(is_wet, is_crouching):
+	if movement_tutorial_complete:
+		return false
+	if not is_wet and not tutorial_dry_step_seen:
+		tutorial_dry_step_seen = true
+		_set_message("DRY CONCRETE: quiet steps. Try the reflective puddle to your right.", 3.6)
+		return true
+	if is_wet and is_crouching and not tutorial_wet_crouch_seen:
+		tutorial_wet_crouch_seen = true
+		if tutorial_wet_walk_seen:
+			movement_tutorial_complete = true
+			_set_message("LESSON COMPLETE: crouch to muffle puddles. ECHO wakes the Listener.", 4.0)
+		else:
+			_set_message("CROUCH: wet steps are quieter. Stand here once to compare.", 3.6)
+		return true
+	if is_wet and not is_crouching and not tutorial_wet_walk_seen:
+		tutorial_wet_walk_seen = true
+		if tutorial_wet_crouch_seen:
+			movement_tutorial_complete = true
+			_set_message("LESSON COMPLETE: puddles carry sound; crouching muffles steps.", 4.0)
+		else:
+			_set_message("PUDDLE: standing steps carry farther. Crouch here to quiet them.", 3.6)
+		return true
+	return false
 
 func _input(event):
 	if event is InputEventScreenTouch or event is InputEventScreenDrag:
@@ -767,7 +797,7 @@ func _emit_echo():
 	enemy_target = player.global_position
 	enemy_speed = 1.12 + float(_collected_count()) * 0.22
 	_spawn_echo_wave()
-	_set_message("ECHO SENT. Your last position is now the lure.", 3.0)
+	_set_message("ECHO SENT. Your origin is the lure; loud footsteps can also expose you.", 3.2)
 	if enemy != null:
 		enemy.look_at(Vector3(enemy_target.x, enemy.global_position.y, enemy_target.z), Vector3.UP)
 
