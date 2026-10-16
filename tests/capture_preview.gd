@@ -33,6 +33,26 @@ func _capture():
         quit(1)
         return
     print("Captured screenshots/archive-preview.png")
+
+    var first_memory = game.shards[0]
+    first_memory["node"].visible = true
+    game.player.global_position = first_memory["node"].global_position
+    game._check_shard_pickups()
+    if not game.memory_read_button.visible:
+        printerr("Memory record did not unlock after the first fragment.")
+        quit(1)
+        return
+    game.memory_read_button.emit_signal("pressed")
+    await process_frame
+    await process_frame
+    var memory_image = get_root().get_viewport().get_texture().get_image()
+    var memory_err = memory_image.save_png("res://screenshots/memory-record-preview.png")
+    if memory_err != OK:
+        printerr("Memory record screenshot save failed: ", memory_err)
+        quit(1)
+        return
+    print("Captured screenshots/memory-record-preview.png")
+
     game.ambient_player.stop()
     game.pulse_player.stream = null
     game.heart_player.stream = null
@@ -42,6 +62,7 @@ func _capture():
     game.footstep_splash_stream = null
     game.footstep_player = null
     image = null
+    memory_image = null
     await create_timer(0.35).timeout
     game.queue_free()
     game = null

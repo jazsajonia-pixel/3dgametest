@@ -11,6 +11,8 @@ const WALK_SPEED = 3.1
 const RUN_SPEED = 5.1
 const CROUCH_SPEED = 1.55
 const GRAVITY = 24.0
+const FIRST_MEMORY_TITLE = "MEMORY 01  /  LOWER ARCHIVE — SHIFT 19"
+const FIRST_MEMORY_TEXT = "We sealed the lower stacks to save the recordings. The night crew were still inside. The archive keeps repeating their last pulse."
 
 var player = null
 var camera = null
@@ -29,6 +31,12 @@ var ui_message = null
 var ui_reticle = null
 var ui_layer = null
 var darkness_overlay = null
+var memory_record_panel = null
+var memory_record_body = null
+var memory_read_button = null
+var memory_close_button = null
+var memory_record_timer = 0.0
+var memory_record_unlocked = false
 var shards = []
 var safe_stations = []
 var flicker_lights = []
@@ -420,6 +428,7 @@ void fragment() {
 	var title = _label(layer, "THE HUM  /  ARCHIVE OF THE DROWNED", Vector2(32, 19), Vector2(720, 26), 15, Color(0.58, 0.72, 0.72), false)
 	title.add_theme_color_override("font_color", Color(0.56, 0.71, 0.69, 0.68))
 	_build_mobile_controls(layer)
+	_build_memory_record_ui(layer)
 
 func _build_mobile_controls(layer):
 	var mobile_layer = Control.new()
@@ -490,6 +499,117 @@ func _build_mobile_controls(layer):
 	run_button.toggled.connect(_on_mobile_run_toggled)
 	var crouch_button = _mobile_button(mobile_layer, "CROUCH", -162, -106, -64, -38, true)
 	crouch_button.toggled.connect(_on_mobile_crouch_toggled)
+
+func _build_memory_record_ui(layer):
+	memory_read_button = Button.new()
+	memory_read_button.name = "ReadMemoryRecordButton"
+	memory_read_button.text = "READ RECORD 01"
+	memory_read_button.anchor_left = 1.0
+	memory_read_button.anchor_right = 1.0
+	memory_read_button.offset_left = -224
+	memory_read_button.offset_top = 22
+	memory_read_button.offset_right = -24
+	memory_read_button.offset_bottom = 74
+	memory_read_button.visible = false
+	memory_read_button.focus_mode = Control.FOCUS_NONE
+	memory_read_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	memory_read_button.add_theme_font_override("font", _font())
+	memory_read_button.add_theme_font_size_override("font_size", 15)
+	memory_read_button.add_theme_color_override("font_color", Color(0.83, 0.94, 0.90))
+	memory_read_button.add_theme_stylebox_override("normal", _mobile_button_style(Color(0.025, 0.075, 0.09, 0.9), Color(0.35, 0.73, 0.68, 0.95)))
+	memory_read_button.add_theme_stylebox_override("pressed", _mobile_button_style(Color(0.08, 0.29, 0.29, 1.0), Color(0.55, 0.94, 0.86, 1.0)))
+	memory_read_button.pressed.connect(_open_memory_record)
+	layer.add_child(memory_read_button)
+	mobile_action_buttons["READ MEMORY"] = memory_read_button
+
+	memory_record_panel = PanelContainer.new()
+	memory_record_panel.name = "MemoryRecordCard"
+	memory_record_panel.anchor_left = 0.18
+	memory_record_panel.anchor_right = 0.82
+	memory_record_panel.anchor_top = 0.57
+	memory_record_panel.anchor_bottom = 0.93
+	memory_record_panel.visible = false
+	memory_record_panel.mouse_filter = Control.MOUSE_FILTER_STOP
+	var panel_style = StyleBoxFlat.new()
+	panel_style.bg_color = Color(0.008, 0.027, 0.032, 0.96)
+	panel_style.border_color = Color(0.28, 0.65, 0.62, 0.95)
+	panel_style.border_width_left = 2
+	panel_style.border_width_top = 2
+	panel_style.border_width_right = 2
+	panel_style.border_width_bottom = 2
+	panel_style.corner_radius_top_left = 12
+	panel_style.corner_radius_top_right = 12
+	panel_style.corner_radius_bottom_left = 12
+	panel_style.corner_radius_bottom_right = 12
+	memory_record_panel.add_theme_stylebox_override("panel", panel_style)
+	layer.add_child(memory_record_panel)
+
+	var margin = MarginContainer.new()
+	margin.add_theme_constant_override("margin_left", 22)
+	margin.add_theme_constant_override("margin_top", 16)
+	margin.add_theme_constant_override("margin_right", 22)
+	margin.add_theme_constant_override("margin_bottom", 14)
+	memory_record_panel.add_child(margin)
+	var column = VBoxContainer.new()
+	column.add_theme_constant_override("separation", 8)
+	margin.add_child(column)
+
+	var title = Label.new()
+	title.text = FIRST_MEMORY_TITLE
+	title.add_theme_font_override("font", _font())
+	title.add_theme_font_size_override("font_size", 18)
+	title.add_theme_color_override("font_color", Color(0.64, 0.92, 0.86))
+	column.add_child(title)
+
+	memory_record_body = Label.new()
+	memory_record_body.text = FIRST_MEMORY_TEXT
+	memory_record_body.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	memory_record_body.custom_minimum_size = Vector2(0, 112)
+	memory_record_body.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	memory_record_body.add_theme_font_override("font", _font())
+	memory_record_body.add_theme_font_size_override("font_size", 21)
+	memory_record_body.add_theme_color_override("font_color", Color(0.88, 0.91, 0.85))
+	column.add_child(memory_record_body)
+
+	var footer = HBoxContainer.new()
+	footer.add_theme_constant_override("separation", 12)
+	column.add_child(footer)
+	var optional_label = Label.new()
+	optional_label.text = "OPTIONAL RECORD  ·  gameplay continues"
+	optional_label.add_theme_font_override("font", _font())
+	optional_label.add_theme_font_size_override("font_size", 13)
+	optional_label.add_theme_color_override("font_color", Color(0.51, 0.70, 0.68))
+	optional_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	footer.add_child(optional_label)
+
+	memory_close_button = Button.new()
+	memory_close_button.name = "CloseMemoryRecordButton"
+	memory_close_button.text = "CLOSE"
+	memory_close_button.custom_minimum_size = Vector2(126, 46)
+	memory_close_button.focus_mode = Control.FOCUS_NONE
+	memory_close_button.mouse_filter = Control.MOUSE_FILTER_STOP
+	memory_close_button.add_theme_font_override("font", _font())
+	memory_close_button.add_theme_font_size_override("font_size", 14)
+	memory_close_button.add_theme_color_override("font_color", Color(0.83, 0.94, 0.90))
+	memory_close_button.add_theme_stylebox_override("normal", _mobile_button_style(Color(0.025, 0.075, 0.09, 0.9), Color(0.35, 0.73, 0.68, 0.95)))
+	memory_close_button.add_theme_stylebox_override("pressed", _mobile_button_style(Color(0.08, 0.29, 0.29, 1.0), Color(0.55, 0.94, 0.86, 1.0)))
+	memory_close_button.pressed.connect(_close_memory_record)
+	footer.add_child(memory_close_button)
+	mobile_action_buttons["CLOSE MEMORY"] = memory_close_button
+
+func _open_memory_record():
+	if not memory_record_unlocked or memory_record_panel == null:
+		return
+	memory_record_panel.visible = true
+	memory_read_button.visible = false
+	memory_record_timer = 12.0
+
+func _close_memory_record():
+	if memory_record_panel != null:
+		memory_record_panel.visible = false
+	memory_record_timer = 0.0
+	if memory_read_button != null:
+		memory_read_button.visible = memory_record_unlocked
 
 func _mobile_button(parent, button_text, left, top, right, bottom, toggle):
 	var button = Button.new()
@@ -581,13 +701,19 @@ func _apply_mobile_look(relative_motion):
 
 func _touch_over_mobile_button(screen_position):
 	for button in mobile_action_buttons.values():
-		if button.get_global_rect().has_point(screen_position):
+		if button.visible and button.get_global_rect().has_point(screen_position):
 			return true
+	if memory_record_panel != null and memory_record_panel.visible and memory_record_panel.get_global_rect().has_point(screen_position):
+		return true
 	return false
 
 func _process(delta):
 	clock += delta
 	footstep_alert_timer = max(0.0, footstep_alert_timer - delta)
+	if memory_record_panel != null and memory_record_panel.visible:
+		memory_record_timer = max(0.0, memory_record_timer - delta)
+		if memory_record_timer <= 0.0:
+			_close_memory_record()
 	if message_timer > 0.0:
 		message_timer -= delta
 		if message_timer <= 0.0 and ui_message != null:
@@ -780,6 +906,11 @@ func _input(event):
 			_toggle_torch()
 		elif event.keycode == KEY_E and not caught and not completed:
 			_interact()
+		elif event.keycode == KEY_M and memory_record_unlocked and not caught and not completed:
+			if memory_record_panel.visible:
+				_close_memory_record()
+			else:
+				_open_memory_record()
 		elif event.keycode == KEY_R and (caught or completed):
 			get_tree().reload_current_scene()
 
@@ -832,7 +963,12 @@ func _check_shard_pickups():
 			shard["node"].visible = false
 			shard["light"].light_energy = 0.0
 			var count = _collected_count()
-			_set_message("MEMORY %d / %d RECOVERED. It remembers you now." % [count, objective_count], 3.1)
+			if int(shard["index"]) == 0:
+				memory_record_unlocked = true
+				memory_read_button.visible = true
+				_set_message("MEMORY 1 / %d RECOVERED. Read RECORD 01 when safe." % objective_count, 3.8)
+			else:
+				_set_message("MEMORY %d / %d RECOVERED. It remembers you now." % [count, objective_count], 3.1)
 			if count >= objective_count:
 				_set_message("ALL MEMORIES RESTORED. The bulkhead is awake.", 4.0)
 				if exit_door != null:
@@ -963,6 +1099,10 @@ func _update_hud():
 
 func _finish(won):
 	Input.mouse_mode = Input.MOUSE_MODE_VISIBLE
+	if memory_record_panel != null:
+		memory_record_panel.visible = false
+	if memory_read_button != null:
+		memory_read_button.visible = false
 	var panel = ColorRect.new()
 	panel.color = Color(0.003, 0.008, 0.012, 0.9)
 	panel.anchor_right = 1.0

@@ -17,6 +17,7 @@ Most horror games make noise a passive penalty. Here, **Q sends a deliberate ech
 - A hand-assembled articulated creature with breathing, head-tilt, limb-swing and pulse-reveal animation.
 - Original spatialized concrete thuds and puddle splashes. When the Listener is awake it hears nearby footfalls: sprinting and wet patches carry farther, while crouching slows and muffles steps.
 - A non-hostile opening lesson uses the real start-area puddle to demonstrate quiet dry steps, louder standing splashes, and crouch counterplay before the first echo wakes the Listener.
+- The first recovered fragment unlocks an optional, wrapped shift-record transcript. Open **READ RECORD 01** (or press **M** on desktop) when safe; it does not pause the game and can be dismissed or left to close on its own.
 - Mobile-first touchscreen HUD: a left analog stick, right-side touch-look, ECHO/LAMP/USE actions, latched RUN/CROUCH toggles, and a touch-friendly restart button. Keyboard and mouse remain available for desktop testing.
 - Echo rings, timed shard visibility, three collectible memory fragments, a locked exit, safe recharge plinths, flashlight battery, and caught/win states.
 - Most level geometry, creature parts, lighting, HUD treatment and animations are created at runtime in GDScript. The imported Poly Haven pipe assembly and its 1K PBR maps, plus the four 1K Concrete Wall 003 maps, are CC0 and recorded in [`assets/third_party/ASSET_SOURCES.md`](assets/third_party/ASSET_SOURCES.md). The concrete material is applied to only one service-bay back wall; the other bay backs remain procedural for comparison. The ambient drone, echo call, and heartbeat are synthesized locally (`tools/generate_audio.py`); the included DejaVu Sans font is licensed under its bundled license.
@@ -35,6 +36,7 @@ Most horror games make noise a passive penalty. Here, **Q sends a deliberate ech
 | Q | Spend a charge to reveal nearby memories; the echo lures the Listener |
 | F | Toggle the flashlight (finite battery; light can repel the creature) |
 | E | Sync with a nearby resonator plinth |
+| M | Open/close the optional first memory record after recovering fragment 01 |
 | R | Restart after escape or capture |
 | Esc | Release / recapture mouse |
 

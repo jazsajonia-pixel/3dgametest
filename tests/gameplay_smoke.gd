@@ -215,7 +215,7 @@ func _run_checks():
     _assert_listener_echo_and_recoil(game)
     _assert_movement_onboarding(game)
     _assert_surface_footsteps(game)
-    assert(game.mobile_action_buttons.size() == 5)
+    assert(game.mobile_action_buttons.size() == 7)
     var stick_center = game.mobile_stick_base.global_position + game.mobile_stick_base.size * 0.5
     var touch_down = InputEventScreenTouch.new()
     touch_down.index = 0
@@ -293,6 +293,29 @@ func _run_checks():
         if not shard["taken"]:
             game.player.global_position = shard["node"].global_position
             game._check_shard_pickups()
+            if int(shard["index"]) == 0:
+                assert(game.memory_record_unlocked)
+                assert(game.ui_message.text.contains("Read RECORD 01"))
+                assert(game.memory_read_button.visible)
+                assert(not game.memory_record_panel.visible)
+                game.memory_read_button.emit_signal("pressed")
+                await process_frame
+                assert(game.memory_record_panel.visible)
+                assert(game.memory_record_body.text.contains("night crew were still inside"))
+                assert(game.memory_record_body.autowrap_mode == TextServer.AUTOWRAP_WORD_SMART)
+                assert(not game.get_tree().paused)
+                var record_rect = game.memory_record_panel.get_global_rect()
+                assert(record_rect.position.x >= 0.0 and record_rect.end.x <= 1600.0)
+                assert(record_rect.position.y >= 0.0 and record_rect.end.y <= 900.0)
+                assert(game._touch_over_mobile_button(record_rect.get_center()))
+                game.memory_record_timer = 0.05
+                game._process(0.1)
+                assert(not game.memory_record_panel.visible)
+                assert(game.memory_read_button.visible)
+                game.memory_read_button.emit_signal("pressed")
+                assert(game.memory_record_panel.visible)
+                game.memory_close_button.emit_signal("pressed")
+                assert(not game.memory_record_panel.visible)
     assert(game._collected_count() == 3)
     assert(not game.exit_door.visible)
     assert(game.exit_door.get_node("CollisionShape3D").disabled)
