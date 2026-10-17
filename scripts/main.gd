@@ -422,7 +422,7 @@ void fragment() {
 	ui_reticle.anchor_bottom = 0.5
 	ui_status = _label(layer, "", Vector2(32, 48), Vector2(700, 28), 17, Color(0.61, 0.82, 0.79), false)
 	ui_objective = _label(layer, "", Vector2(32, 78), Vector2(900, 28), 16, Color(0.84, 0.86, 0.78), false)
-	ui_hint = _label(layer, "TOUCH: LEFT STICK MOVE   •   DRAG RIGHT TO LOOK\nECHO   LAMP   USE   RUN   CROUCH", Vector2(32, 112), Vector2(760, 46), 13, Color(0.48, 0.61, 0.61), false)
+	ui_hint = _label(layer, "TOUCH: LEFT STICK MOVE   •   DRAG RIGHT TO LOOK\nECHO   LAMP   USE   RUN   CROUCH\nECHO reveals fragments; Listener follows the pulse origin—move away.", Vector2(32, 112), Vector2(900, 72), 15, Color(0.76, 0.87, 0.83), false)
 	ui_message = _label(layer, "", Vector2(300, 390), Vector2(1000, 50), 22, Color(0.81, 0.94, 0.88), true)
 	ui_message.visible = false
 	var title = _label(layer, "THE HUM  /  ARCHIVE OF THE DROWNED", Vector2(32, 19), Vector2(720, 26), 15, Color(0.58, 0.72, 0.72), false)
@@ -928,7 +928,7 @@ func _emit_echo():
 	enemy_target = player.global_position
 	enemy_speed = 1.12 + float(_collected_count()) * 0.22
 	_spawn_echo_wave()
-	_set_message("ECHO SENT. Your origin is the lure; loud footsteps can also expose you.", 3.2)
+	_set_message("LISTENER FOLLOWS THIS ECHO ORIGIN—MOVE AWAY. LOUD FOOTSTEPS CAN EXPOSE YOU.", 3.2)
 	if enemy != null:
 		enemy.look_at(Vector3(enemy_target.x, enemy.global_position.y, enemy_target.z), Vector3.UP)
 

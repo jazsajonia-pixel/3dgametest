@@ -17,6 +17,7 @@ Most horror games make noise a passive penalty. Here, **Q sends a deliberate ech
 - A hand-assembled articulated creature with breathing, head-tilt, limb-swing and pulse-reveal animation.
 - Original spatialized concrete thuds and puddle splashes. When the Listener is awake it hears nearby footfalls: sprinting and wet patches carry farther, while crouching slows and muffles steps.
 - A non-hostile opening lesson uses the real start-area puddle to demonstrate quiet dry steps, louder standing splashes, and crouch counterplay before the first echo wakes the Listener.
+- An always-visible pre-pulse HUD cue explains that ECHO reveals fragments but directs the Listener to the pulse origin; post-pulse feedback tells the player to move away.
 - The first recovered fragment unlocks an optional, wrapped shift-record transcript. Open **READ RECORD 01** (or press **M** on desktop) when safe; it does not pause the game and can be dismissed or left to close on its own.
 - Mobile-first touchscreen HUD: a left analog stick, right-side touch-look, ECHO/LAMP/USE actions, latched RUN/CROUCH toggles, and a touch-friendly restart button. Keyboard and mouse remain available for desktop testing.
 - Echo rings, timed shard visibility, three collectible memory fragments, a locked exit, safe recharge plinths, flashlight battery, and caught/win states.
